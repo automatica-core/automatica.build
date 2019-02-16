@@ -1,0 +1,62 @@
+{
+    "id": "f5e5140e-9509-478e-a694-acdd33b5e385",
+    "name": "Automatica.Core docker multi-arch",
+    "friendlyName": "Automatica.Core docker multi-arch build",
+    "description": "Build multiarch docker images",
+    "helpMarkDown": "",
+    "category": "Utility",
+    "author": "p3root",
+    "version": {
+        "Major": 1,
+        "Minor": 0,
+        "Patch": 0
+    },
+    "instanceNameFormat": "Automatica.Core multi-arch docker",
+    "inputs": [
+        {
+            "name": "dockerfile-amd64",
+            "type": "filePath",
+            "label": "",
+            "defaultValue": null,
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "dockerfile-arm32",
+            "type": "filePath",
+            "label": "",
+            "defaultValue": null,
+            "required": false,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "imageName",
+            "type": "string",
+            "label": "",
+            "defaultValue": null,
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "buildArgs",
+            "type": "multiLine",
+            "label": "Provide additional build arguments",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "version",
+            "type": "string",
+            "label": "Image version",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": ""
+        }
+    ],
+    "execution": {
+        "Node": {
+            "target": "index.js"
+        }
+    }
+}
