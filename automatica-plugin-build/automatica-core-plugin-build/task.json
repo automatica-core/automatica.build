@@ -7,9 +7,9 @@
     "category": "Utility",
     "author": "p3root",
     "version": {
-        "Major": 0,
-        "Minor": 7,
-        "Patch": 2
+        "Major": 2,
+        "Minor": 0,
+        "Patch": 1
     },
     "instanceNameFormat": "Automatica.Core Plugin build",
     "inputs": [
@@ -20,7 +20,8 @@
             "defaultValue": "",
             "required": true,
             "helpMarkDown": ""
-        }, {
+        },
+        {
             "name": "version",
             "type": "string",
             "label": "Automatica plugin version",
@@ -59,6 +60,38 @@
             "defaultValue": false,
             "required": true,
             "helpMarkDown": "Set to true if the package should be deployed to the cloud"
+        },
+        {
+            "name": "dockerize",
+            "type": "boolean",
+            "label": "Creates a docker image",
+            "defaultValue": false,
+            "required": true,
+            "helpMarkDown": "Set to true if the package should be dockerized"
+        },
+        {
+            "name": "docker_user",
+            "type": "string",
+            "label": "Docker user name",
+            "defaultValue": false,
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "docker_password",
+            "type": "password",
+            "label": "Docker password",
+            "defaultValue": false,
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "plugin_name",
+            "type": "string",
+            "label": "Plugin Name",
+            "defaultValue": false,
+            "required": true,
+            "helpMarkDown": ""
         },
         {
             "name": "outputdirectory",
