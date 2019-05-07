@@ -38,9 +38,10 @@ exports.__esModule = true;
 var tl = require("azure-pipelines-task-lib/task");
 var process = require("process");
 var fs = require('fs');
+var path = require('path');
 function run() {
     return __awaiter(this, void 0, void 0, function () {
-        var publish, dockerize, docker_user, docker_pw, pluginName, manifestPath, version, apiKey, cloudUrl, config, outDir, manifestDir, packResult, dockerTag, files, f, deployResult, err_1;
+        var publish, dockerize, docker_user, docker_pw, pluginName, manifestPath, manifestDirectory, version, apiKey, cloudUrl, manifestDir, config, outDir, dockerTag, dockerTagLatest, buildResult, packResult, deployResult, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -55,9 +56,11 @@ function run() {
                     }
                     pluginName = tl.getInput("plugin_name", true);
                     manifestPath = tl.getInput("manifest_path", true);
+                    manifestDirectory = "." + manifestPath.replace("automatica-manifest.json", "").replace(tl.cwd(), "");
                     version = tl.getInput("version", true);
                     apiKey = "";
                     cloudUrl = "";
+                    manifestDir = require('path').dirname(manifestPath);
                     if (publish) {
                         apiKey = tl.getInput("api_key", true);
                         cloudUrl = tl.getInput("cloud_url", true);
@@ -65,41 +68,35 @@ function run() {
                     config = tl.getInput("configuration", true);
                     outDir = tl.getInput("outputdirectory", true);
                     tl.mkdirP(outDir);
-                    manifestDir = require('path').dirname(manifestPath);
-                    return [4 /*yield*/, automatica_cli(["Pack", "-W", manifestDir, "-V", version, "-C", config, "-O", outDir])];
+                    if (!dockerize) return [3 /*break*/, 4];
+                    console.log("Copy", path.resolve(__dirname, "Dockerfile"), "to Dockerfile");
+                    tl.cp(path.resolve(__dirname, "Dockerfile"), "Dockerfile", "-f");
+                    dockerTag = ("automaticacore/plugin-" + pluginName + ":" + version + "-" + process.arch).toLowerCase();
+                    dockerTagLatest = ("automaticacore/plugin-" + pluginName + ":latest-" + process.arch).toLowerCase();
+                    return [4 /*yield*/, docker_cli(["login", "-u", docker_user, "-p", docker_pw])];
                 case 1:
+                    _a.sent();
+                    return [4 /*yield*/, docker_cli(["build", "-f", "Dockerfile", "-t", dockerTag, "-t", dockerTagLatest, ".",
+                            "--build-arg", "MANIFEST_DIR=" + manifestDirectory, "--build-arg", "VERSION=" + version, "--build-arg", "CONFIG=" + config])];
+                case 2:
+                    buildResult = _a.sent();
+                    if (buildResult != 0) {
+                        tl.setResult(tl.TaskResult.Failed, "Docker build failed");
+                        return [2 /*return*/];
+                    }
+                    return [4 /*yield*/, docker_cli(["push", dockerTag])];
+                case 3:
+                    _a.sent();
+                    _a.label = 4;
+                case 4:
+                    if (!publish) return [3 /*break*/, 7];
+                    return [4 /*yield*/, automatica_cli(["Pack", "-W", manifestDir, "-V", version, "-C", config, "-O", outDir])];
+                case 5:
                     packResult = _a.sent();
                     if (packResult != 0) {
                         tl.setResult(tl.TaskResult.Failed, "Pack command failed");
                         return [2 /*return*/];
                     }
-                    if (!dockerize) return [3 /*break*/, 5];
-                    dockerTag = "automaticacore/plugin-" + pluginName + ":" + version + "-" + process.arch;
-                    //  await run_cmd("cp", [outDir+"/*.acpkg", outDir+"plugin.acpkg"]);
-                    // fs.copyFileSync(`${outDir}/*.acpkg`, `${outDir}/plugin.acpkg`);
-                    return [4 /*yield*/, docker_cli(["login", "-u", docker_user, "-p", docker_pw])];
-                case 2:
-                    //  await run_cmd("cp", [outDir+"/*.acpkg", outDir+"plugin.acpkg"]);
-                    // fs.copyFileSync(`${outDir}/*.acpkg`, `${outDir}/plugin.acpkg`);
-                    _a.sent();
-                    files = fs.readdirSync(outDir);
-                    for (f in files) {
-                        console.log("files...", files[f]);
-                        if (files[f].endsWith(".acpkg")) {
-                            console.log("copy from ", outDir + "/" + files[f], tl.cwd() + "/plugin.acpkg");
-                            fs.copyFileSync(outDir + "/" + files[f], tl.cwd() + "/plugin.acpkg");
-                            break;
-                        }
-                    }
-                    return [4 /*yield*/, docker_cli(["build", "-f", "Dockerfile", "-t", dockerTag, "."])];
-                case 3:
-                    _a.sent();
-                    return [4 /*yield*/, docker_cli(["push", dockerTag])];
-                case 4:
-                    _a.sent();
-                    _a.label = 5;
-                case 5:
-                    if (!publish) return [3 /*break*/, 7];
                     return [4 /*yield*/, automatica_cli(["DeployPlugin", "-F", outDir + "/", "-A", apiKey, "-C", cloudUrl])];
                 case 6:
                     deployResult = _a.sent();
