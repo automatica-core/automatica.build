@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "automatica-core-plugin-build",
     "name": "Automatica.Core plugin build",
-    "version": "2.1.16",
+    "version": "2.1.17",
     "publisher": "p3root",
     "targets": [
         {

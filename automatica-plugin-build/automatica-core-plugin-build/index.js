@@ -45,7 +45,7 @@ function run() {
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 8, , 9]);
+                    _a.trys.push([0, 9, , 10]);
                     publish = tl.getBoolInput("publish", true);
                     dockerize = tl.getBoolInput("dockerize", true);
                     docker_user = "";
@@ -68,7 +68,7 @@ function run() {
                     config = tl.getInput("configuration", true);
                     outDir = tl.getInput("outputdirectory", true);
                     tl.mkdirP(outDir);
-                    if (!dockerize) return [3 /*break*/, 4];
+                    if (!dockerize) return [3 /*break*/, 5];
                     console.log("Copy", path.resolve(__dirname, "Dockerfile"), "to Dockerfile");
                     tl.cp(path.resolve(__dirname, "Dockerfile"), "Dockerfile", "-f");
                     dockerTag = ("automaticacore/plugin-" + pluginName + ":" + version + "-" + process.arch).toLowerCase();
@@ -87,30 +87,33 @@ function run() {
                     return [4 /*yield*/, docker_cli(["push", dockerTag])];
                 case 3:
                     _a.sent();
-                    _a.label = 4;
+                    return [4 /*yield*/, docker_cli(["push", dockerTagLatest])];
                 case 4:
-                    if (!publish) return [3 /*break*/, 7];
-                    return [4 /*yield*/, automatica_cli(["Pack", "-W", manifestDir, "-V", version, "-C", config, "-O", outDir])];
+                    _a.sent();
+                    _a.label = 5;
                 case 5:
+                    if (!publish) return [3 /*break*/, 8];
+                    return [4 /*yield*/, automatica_cli(["Pack", "-W", manifestDir, "-V", version, "-C", config, "-O", outDir])];
+                case 6:
                     packResult = _a.sent();
                     if (packResult != 0) {
                         tl.setResult(tl.TaskResult.Failed, "Pack command failed");
                         return [2 /*return*/];
                     }
                     return [4 /*yield*/, automatica_cli(["DeployPlugin", "-F", outDir + "/", "-A", apiKey, "-C", cloudUrl])];
-                case 6:
+                case 7:
                     deployResult = _a.sent();
                     if (deployResult != 0) {
                         tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");
                         return [2 /*return*/];
                     }
-                    _a.label = 7;
-                case 7: return [3 /*break*/, 9];
-                case 8:
+                    _a.label = 8;
+                case 8: return [3 /*break*/, 10];
+                case 9:
                     err_1 = _a.sent();
                     tl.setResult(tl.TaskResult.Failed, err_1.message);
-                    return [3 /*break*/, 9];
-                case 9: return [2 /*return*/];
+                    return [3 /*break*/, 10];
+                case 10: return [2 /*return*/];
             }
         });
     });
