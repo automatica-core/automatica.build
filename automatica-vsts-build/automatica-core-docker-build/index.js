@@ -61,7 +61,7 @@ function run() {
                             buildArgsArray.push(x);
                         }
                     }
-                    return [4 /*yield*/, docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
+                    return [4 /*yield*/, docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
                 case 1:
                     _a.sent();
                     return [4 /*yield*/, buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, "amd64")];
@@ -109,7 +109,7 @@ function buildDockerManifest(amdImages, armImages, imageName, registryEndpoint) 
                     return [4 /*yield*/, dockerManifestAnnotate(armImages, imageName + ":latest-" + branch, "arm")];
                 case 3:
                     _a.sent();
-                    return [4 /*yield*/, docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
+                    return [4 /*yield*/, docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
                 case 4:
                     _a.sent();
                     return [4 /*yield*/, docker_manifest(["push", imageName + ":latest-" + branch])];

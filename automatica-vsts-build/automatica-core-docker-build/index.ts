@@ -27,7 +27,7 @@ async function run() {
             }
         }
 
-        await docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
+        await docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
 
         const amd64 = await buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, "amd64");
         let arm32: string[] = [];
@@ -60,7 +60,9 @@ async function buildDockerManifest(amdImages: string[], armImages: string[], ima
     await dockerManifestAnnotate(armImages, `${imageName}:latest-${branch}`, "arm");
 
 
-    await docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
+    
+    await docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
+
     retCode = await docker_manifest(["push", `${imageName}:latest-${branch}`]);
 
     if (retCode != 0) {
