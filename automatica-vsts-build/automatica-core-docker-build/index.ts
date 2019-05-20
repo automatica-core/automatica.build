@@ -27,7 +27,7 @@ async function run() {
             }
         }
 
-        await docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
+        await docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
 
         const amd64 = await buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, "amd64");
         let arm32: string[] = [];

@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "automatica-core-vsts-build",
     "name": "Automatica.Core vsts build tools",
-    "version": "3.0.14",
+    "version": "3.0.15",
     "publisher": "p3root",
     "targets": [
         {
