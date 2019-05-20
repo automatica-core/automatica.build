@@ -36,27 +36,18 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 exports.__esModule = true;
 var tl = require("azure-pipelines-task-lib/task");
-var process = require("process");
 var fs = require('fs');
 var path = require('path');
 function run() {
     return __awaiter(this, void 0, void 0, function () {
-        var publish, dockerize, docker_user, docker_pw, pluginName, manifestPath, manifestDirectory, version, apiKey, cloudUrl, manifestDir, config, outDir, dockerTag, dockerTagLatest, buildResult, packResult, deployResult, err_1;
+        var publish, dockerize, manifestPath, version, apiKey, cloudUrl, manifestDir, config, outDir, packResult, deployResult, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 9, , 10]);
+                    _a.trys.push([0, 4, , 5]);
                     publish = tl.getBoolInput("publish", true);
                     dockerize = tl.getBoolInput("dockerize", true);
-                    docker_user = "";
-                    docker_pw = "";
-                    if (dockerize) {
-                        docker_user = tl.getInput("docker_user", true);
-                        docker_pw = tl.getInput("docker_password", true);
-                    }
-                    pluginName = tl.getInput("plugin_name", true);
                     manifestPath = tl.getInput("manifest_path", true);
-                    manifestDirectory = "." + manifestPath.replace("automatica-manifest.json", "").replace(tl.cwd(), "");
                     version = tl.getInput("version", true);
                     apiKey = "";
                     cloudUrl = "";
@@ -68,52 +59,34 @@ function run() {
                     config = tl.getInput("configuration", true);
                     outDir = tl.getInput("outputdirectory", true);
                     tl.mkdirP(outDir);
-                    if (!dockerize) return [3 /*break*/, 5];
-                    console.log("Copy", path.resolve(__dirname, "Dockerfile"), "to Dockerfile");
-                    tl.cp(path.resolve(__dirname, "Dockerfile"), "Dockerfile", "-f");
-                    dockerTag = ("automaticacore/plugin-" + pluginName + ":" + version + "-" + process.arch).toLowerCase();
-                    dockerTagLatest = ("automaticacore/plugin-" + pluginName + ":latest-" + process.arch).toLowerCase();
-                    return [4 /*yield*/, docker_cli(["login", "-u", docker_user, "-p", docker_pw])];
-                case 1:
-                    _a.sent();
-                    return [4 /*yield*/, docker_cli(["build", "-f", "Dockerfile", "-t", dockerTag, "-t", dockerTagLatest, ".",
-                            "--build-arg", "MANIFEST_DIR=" + manifestDirectory, "--build-arg", "VERSION=" + version, "--build-arg", "CONFIG=" + config])];
-                case 2:
-                    buildResult = _a.sent();
-                    if (buildResult != 0) {
-                        tl.setResult(tl.TaskResult.Failed, "Docker build failed");
-                        return [2 /*return*/];
+                    if (dockerize) {
+                        console.log("Copy", path.resolve(__dirname, "Dockerfile"), "to Dockerfile");
+                        tl.cp(path.resolve(__dirname, "Dockerfile"), "Dockerfile", "-f");
+                        console.log("Copy", path.resolve(__dirname, "Dockerfile.arm32"), "to Dockerfile.arm32");
+                        tl.cp(path.resolve(__dirname, "Dockerfile.arm32"), "Dockerfile.arm32", "-f");
                     }
-                    return [4 /*yield*/, docker_cli(["push", dockerTag])];
-                case 3:
-                    _a.sent();
-                    return [4 /*yield*/, docker_cli(["push", dockerTagLatest])];
-                case 4:
-                    _a.sent();
-                    _a.label = 5;
-                case 5:
-                    if (!publish) return [3 /*break*/, 8];
+                    if (!publish) return [3 /*break*/, 3];
                     return [4 /*yield*/, automatica_cli(["Pack", "-W", manifestDir, "-V", version, "-C", config, "-O", outDir])];
-                case 6:
+                case 1:
                     packResult = _a.sent();
                     if (packResult != 0) {
                         tl.setResult(tl.TaskResult.Failed, "Pack command failed");
                         return [2 /*return*/];
                     }
                     return [4 /*yield*/, automatica_cli(["DeployPlugin", "-F", outDir + "/", "-A", apiKey, "-C", cloudUrl])];
-                case 7:
+                case 2:
                     deployResult = _a.sent();
                     if (deployResult != 0) {
                         tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");
                         return [2 /*return*/];
                     }
-                    _a.label = 8;
-                case 8: return [3 /*break*/, 10];
-                case 9:
+                    _a.label = 3;
+                case 3: return [3 /*break*/, 5];
+                case 4:
                     err_1 = _a.sent();
                     tl.setResult(tl.TaskResult.Failed, err_1.message);
-                    return [3 /*break*/, 10];
-                case 10: return [2 /*return*/];
+                    return [3 /*break*/, 5];
+                case 5: return [2 /*return*/];
             }
         });
     });

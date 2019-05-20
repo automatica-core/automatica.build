@@ -23,12 +23,9 @@ RUN automatica-cli pack -W $MANIFEST_DIR -V $VERSION -C $CONFIG -o /build/ -U fa
 
 RUN for file in /build/*.acpkg; do mv $file /build/pluginFile.acpkg; break; done
 
-RUN ls /build
-
 RUN automatica-cli InstallPlugin -p /build/pluginFile.acpkg -I /plugin
 
-
-FROM automaticacore/automatica-cli-tools:amd64-develop-latest AS runtime
+FROM automaticacore/automatica-cli-tools:arm-develop-latest AS runtime
 COPY --from=build /plugin /plugin
 
 ENTRYPOINT ["automatica-plugin-standalone", "/plugin"]

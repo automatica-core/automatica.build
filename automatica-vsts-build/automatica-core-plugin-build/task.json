@@ -2,14 +2,14 @@
     "id": "ce6bb335-c6ef-4b34-bf32-b1de2653c06d",
     "name": "Automatica.Core Plugin build",
     "friendlyName": "Automatica.Core Plugin build task",
-    "description": "Builds and/or deploys Automatica.Core plugins",
+    "description": "Build/deploy/prepare Automatica.Core plugins",
     "helpMarkDown": "",
     "category": "Utility",
     "author": "p3root",
     "version": {
-        "Major": 3,
+        "Major": 4,
         "Minor": 0,
-        "Patch": 0
+        "Patch": 5
     },
     "instanceNameFormat": "Automatica.Core Plugin build",
     "inputs": [
@@ -64,31 +64,7 @@
         {
             "name": "dockerize",
             "type": "boolean",
-            "label": "Creates a docker image",
-            "defaultValue": false,
-            "required": true,
-            "helpMarkDown": "Set to true if the package should be dockerized"
-        },
-        {
-            "name": "docker_user",
-            "type": "string",
-            "label": "Docker user name",
-            "defaultValue": false,
-            "required": true,
-            "helpMarkDown": ""
-        },
-        {
-            "name": "docker_password",
-            "type": "password",
-            "label": "Docker password",
-            "defaultValue": false,
-            "required": true,
-            "helpMarkDown": ""
-        },
-        {
-            "name": "plugin_name",
-            "type": "string",
-            "label": "Plugin Name",
+            "label": "Prepares the source directory for the docker build process",
             "defaultValue": false,
             "required": true,
             "helpMarkDown": ""

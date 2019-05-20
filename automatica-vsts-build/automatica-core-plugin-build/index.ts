@@ -7,20 +7,7 @@ async function run() {
     try {
         const publish = tl.getBoolInput("publish", true);
         const dockerize = tl.getBoolInput("dockerize", true);
-
-        let docker_user = "";
-        let docker_pw = "";
-        if (dockerize) {
-            docker_user = tl.getInput("docker_user", true);
-            docker_pw = tl.getInput("docker_password", true);
-
-        }
-
-        const pluginName = tl.getInput("plugin_name", true);
         const manifestPath = tl.getInput("manifest_path", true);
-        
-        const manifestDirectory = "." + manifestPath.replace("automatica-manifest.json", "").replace(tl.cwd(), "");
-        
         const version = tl.getInput("version", true);
         let apiKey: string = "";
         let cloudUrl: string = "";
@@ -36,27 +23,13 @@ async function run() {
 
         tl.mkdirP(outDir);
 
-
-
         if (dockerize) {
 
             console.log("Copy", path.resolve(__dirname, "Dockerfile"), "to Dockerfile");
             tl.cp(path.resolve(__dirname, "Dockerfile"), "Dockerfile", "-f");
 
-            const dockerTag = `automaticacore/plugin-${pluginName}:${version}-${process.arch}`.toLowerCase();
-            const dockerTagLatest = `automaticacore/plugin-${pluginName}:latest-${process.arch}`.toLowerCase();
-            await docker_cli(["login", "-u", docker_user, "-p", docker_pw]);
-
-            var buildResult = await docker_cli(["build", "-f", "Dockerfile", "-t", dockerTag, "-t", dockerTagLatest, ".",
-                "--build-arg", "MANIFEST_DIR=" + manifestDirectory, "--build-arg", "VERSION=" + version, "--build-arg", "CONFIG=" + config]);
-
-            if (buildResult != 0) {
-                tl.setResult(tl.TaskResult.Failed, "Docker build failed");
-                return;
-            }
-
-            await docker_cli(["push", dockerTag]);
-            await docker_cli(["push", dockerTagLatest]);
+            console.log("Copy", path.resolve(__dirname, "Dockerfile.arm32"), "to Dockerfile.arm32");
+            tl.cp(path.resolve(__dirname, "Dockerfile.arm32"), "Dockerfile.arm32", "-f");
         }
 
         if (publish) {
