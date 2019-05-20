@@ -1,0 +1,69 @@
+{
+    "id": "8ea5560a-adc6-4459-91fa-0b560718e9ea",
+    "name": "Automatica.Core docker multi-arch",
+    "friendlyName": "Automatica.Core docker multi-arch build",
+    "description": "Build multiarch docker images",
+    "helpMarkDown": "",
+    "category": "Utility",
+    "author": "p3root",
+    "version": {
+        "Major": 3,
+        "Minor": 0,
+        "Patch": 14
+    },
+    "instanceNameFormat": "Automatica.Core multi-arch docker",
+    "inputs": [
+        {
+            "name": "dockerRegistryEndpoint",
+            "type": "connectedService:dockerregistry",
+            "label": "Docker registry service connection",
+            "helpMarkDown": "Select a Docker registry service connection. Required for commands that need to authenticate with a registry.",
+            "required": true
+        },
+        {
+            "name": "dockerfile_amd64",
+            "type": "filePath",
+            "label": "Dockerfile amd64",
+            "defaultValue": null,
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "dockerfile_arm32",
+            "type": "filePath",
+            "label": "Dockerfile arm32",
+            "defaultValue": null,
+            "required": false,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "imageName",
+            "type": "string",
+            "label": "Image name",
+            "defaultValue": null,
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "buildArgs",
+            "type": "multiLine",
+            "label": "Provide additional build arguments",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "version",
+            "type": "string",
+            "label": "Image version",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": ""
+        }
+    ],
+    "execution": {
+        "Node": {
+            "target": "index.js"
+        }
+    }
+}

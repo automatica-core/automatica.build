@@ -1,0 +1,43 @@
+{
+    "manifestVersion": 1,
+    "id": "automatica-core-vsts-build",
+    "name": "Automatica.Core vsts build tools",
+    "version": "3.0.14",
+    "publisher": "p3root",
+    "targets": [
+        {
+            "id": "Microsoft.VisualStudio.Services"
+        }
+    ],
+    "description": "Utils for building Automatica.Core",
+    "categories": [
+        "Azure Pipelines"
+    ],
+    "files": [
+        {
+            "path": ""
+        }
+    ],
+    "contributions": [
+        {
+            "id": "custom-automatica-core-plugin-build",
+            "type": "ms.vss-distributed-task.task",
+            "targets": [
+                "ms.vss-distributed-task.tasks"
+            ],
+            "properties": {
+                "name": "automatica-core-plugin-build"
+            }
+        },
+        {
+            "id": "custom-automatica-core-docker-build",
+            "type": "ms.vss-distributed-task.task",
+            "targets": [
+                "ms.vss-distributed-task.tasks"
+            ],
+            "properties": {
+                "name": "automatica-core-docker-build"
+            }
+        }
+    ]
+}
