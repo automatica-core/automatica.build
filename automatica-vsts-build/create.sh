@@ -2,6 +2,14 @@
 
 
 rm *.vsix
-tsc ./automatica-core-plugin-build/index.ts
-tsc ./automatica-core-docker-build/index.ts
+cd automatica-core-plugin-build
+npm i
+tsc index.ts
+cd ..
+
+cd automatica-core-docker-build
+npm i
+tsc index.ts
+cd ..
+
 tfx extension create --manifest-globs vss-extension.json
