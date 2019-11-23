@@ -1,5 +1,5 @@
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/core/sdk:2.2 AS build
+FROM automaticacore/automatica-plugin-build:latest-arm AS build
 WORKDIR /src
 
 ARG MANIFEST_DIR

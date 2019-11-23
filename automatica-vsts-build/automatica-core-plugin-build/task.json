@@ -8,8 +8,8 @@
     "author": "p3root",
     "version": {
         "Major": 4,
-        "Minor": 0,
-        "Patch": 9
+        "Minor": 1,
+        "Patch": 0
     },
     "instanceNameFormat": "Automatica.Core Plugin build",
     "inputs": [
