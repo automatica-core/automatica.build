@@ -37,9 +37,17 @@ async function run() {
         console.log("Copy", path.resolve(__dirname, "docker.config"), "to config.json");
         tl.cp(path.resolve(__dirname, "docker.config"), "config.json", "-f");
 
-        await buildDockerManifest(amd64, arm32, imageName, registryEndpoint);
+        let branch = tl.getVariable("Build.SourceBranchName");
 
-
+        if(branch === "master") {
+            branch = "";
+        }
+        else {
+            branch = `-${branch}`;
+        }
+        await buildDockerManifest(`latest${branch}`, amd64, arm32, imageName, registryEndpoint);
+        await buildDockerManifest(`${version}${branch}`, amd64, arm32, imageName, registryEndpoint);
+        
     }
     catch (err) {
         tl.setResult(tl.TaskResult.Failed, err.message);
@@ -47,23 +55,22 @@ async function run() {
     }
 }
 
-async function buildDockerManifest(amdImages: string[], armImages: string[], imageName: string, registryEndpoint: any) {
-    const branch = tl.getVariable("Build.SourceBranchName");
+async function buildDockerManifest(tag: string, amdImages: string[], armImages: string[], imageName: string, registryEndpoint: any) {
 
-    var retCode = await docker_manifest(["create", `${imageName}:latest-${branch}`, ...amdImages, ...armImages, "--amend"])
+    var retCode = await docker_manifest(["create", `${imageName}:${tag}`, ...amdImages, ...armImages, "--amend"])
 
     if (retCode != 0) {
         throw new Error("error creating manifest...");
     }
 
-    await dockerManifestAnnotate(amdImages, `${imageName}:latest-${branch}`, "amd64");
-    await dockerManifestAnnotate(armImages, `${imageName}:latest-${branch}`, "arm");
+    await dockerManifestAnnotate(amdImages, `${imageName}:${tag}`, "amd64");
+    await dockerManifestAnnotate(armImages, `${imageName}:${tag}`, "arm");
 
 
     
     await docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
 
-    retCode = await docker_manifest(["push", `${imageName}:latest-${branch}`]);
+    retCode = await docker_manifest(["push", `${imageName}:${tag}`]);
 
     if (retCode != 0) {
         throw new Error("error pushing manifest image...");

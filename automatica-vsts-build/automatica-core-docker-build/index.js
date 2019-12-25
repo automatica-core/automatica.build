@@ -40,11 +40,11 @@ var fs = require('fs');
 var path = require('path');
 function run() {
     return __awaiter(this, void 0, void 0, function () {
-        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, amd64, arm32, err_1;
+        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, amd64, arm32, branch, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    _a.trys.push([0, 6, , 7]);
+                    _a.trys.push([0, 7, , 8]);
                     endpointId = tl.getInput("dockerRegistryEndpoint");
                     registryEndpoint = tl.getEndpointAuthorization(endpointId, false).parameters;
                     dockerAmd64 = tl.getPathInput("dockerfile_amd64", true);
@@ -76,43 +76,51 @@ function run() {
                 case 4:
                     console.log("Copy", path.resolve(__dirname, "docker.config"), "to config.json");
                     tl.cp(path.resolve(__dirname, "docker.config"), "config.json", "-f");
-                    return [4 /*yield*/, buildDockerManifest(amd64, arm32, imageName, registryEndpoint)];
+                    branch = tl.getVariable("Build.SourceBranchName");
+                    if (branch === "master") {
+                        branch = "";
+                    }
+                    else {
+                        branch = "-" + branch;
+                    }
+                    return [4 /*yield*/, buildDockerManifest("latest" + branch, amd64, arm32, imageName, registryEndpoint)];
                 case 5:
                     _a.sent();
-                    return [3 /*break*/, 7];
+                    return [4 /*yield*/, buildDockerManifest("" + version + branch, amd64, arm32, imageName, registryEndpoint)];
                 case 6:
+                    _a.sent();
+                    return [3 /*break*/, 8];
+                case 7:
                     err_1 = _a.sent();
                     tl.setResult(tl.TaskResult.Failed, err_1.message);
                     console.error(err_1);
-                    return [3 /*break*/, 7];
-                case 7: return [2 /*return*/];
+                    return [3 /*break*/, 8];
+                case 8: return [2 /*return*/];
             }
         });
     });
 }
-function buildDockerManifest(amdImages, armImages, imageName, registryEndpoint) {
+function buildDockerManifest(tag, amdImages, armImages, imageName, registryEndpoint) {
     return __awaiter(this, void 0, void 0, function () {
-        var branch, retCode;
+        var retCode;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0:
-                    branch = tl.getVariable("Build.SourceBranchName");
-                    return [4 /*yield*/, docker_manifest(["create", imageName + ":latest-" + branch].concat(amdImages, armImages, ["--amend"]))];
+                case 0: return [4 /*yield*/, docker_manifest(["create", imageName + ":" + tag].concat(amdImages, armImages, ["--amend"]))];
                 case 1:
                     retCode = _a.sent();
                     if (retCode != 0) {
                         throw new Error("error creating manifest...");
                     }
-                    return [4 /*yield*/, dockerManifestAnnotate(amdImages, imageName + ":latest-" + branch, "amd64")];
+                    return [4 /*yield*/, dockerManifestAnnotate(amdImages, imageName + ":" + tag, "amd64")];
                 case 2:
                     _a.sent();
-                    return [4 /*yield*/, dockerManifestAnnotate(armImages, imageName + ":latest-" + branch, "arm")];
+                    return [4 /*yield*/, dockerManifestAnnotate(armImages, imageName + ":" + tag, "arm")];
                 case 3:
                     _a.sent();
                     return [4 /*yield*/, docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
                 case 4:
                     _a.sent();
-                    return [4 /*yield*/, docker_manifest(["push", imageName + ":latest-" + branch])];
+                    return [4 /*yield*/, docker_manifest(["push", imageName + ":" + tag])];
                 case 5:
                     retCode = _a.sent();
                     if (retCode != 0) {
