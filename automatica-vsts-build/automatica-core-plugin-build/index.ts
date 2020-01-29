@@ -41,7 +41,7 @@ async function run() {
                 return;
             }
 
-            const deployResult = await automatica_cli(["DeployPlugin", "-F", outDir + "/", "-A", apiKey, "-C", cloudUrl]);
+            const deployResult = await automatica_cli(["DeployPlugin", "-F", outDir + "/", "-A", apiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")]);
 
             if (deployResult != 0) {
                 tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");

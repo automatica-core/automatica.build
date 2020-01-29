@@ -73,7 +73,7 @@ function run() {
                         tl.setResult(tl.TaskResult.Failed, "Pack command failed");
                         return [2 /*return*/];
                     }
-                    return [4 /*yield*/, automatica_cli(["DeployPlugin", "-F", outDir + "/", "-A", apiKey, "-C", cloudUrl])];
+                    return [4 /*yield*/, automatica_cli(["DeployPlugin", "-F", outDir + "/", "-A", apiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")])];
                 case 2:
                     deployResult = _a.sent();
                     if (deployResult != 0) {
