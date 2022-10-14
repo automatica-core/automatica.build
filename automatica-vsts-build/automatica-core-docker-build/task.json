@@ -1,14 +1,14 @@
 {
-    "id": "8ea5560a-adc6-4459-91fa-0b560718e9ea",
-    "name": "Automatica.Core docker multi-arch",
+    "id": "166e69c4-a6c1-4366-b4a1-a249d7934c4e",
+    "name": "AutomaticaCoreDockerMultiArchCli",
     "friendlyName": "Automatica.Core docker multi-arch build",
     "description": "Build multiarch docker images",
     "helpMarkDown": "",
     "category": "Utility",
     "author": "p3root",
     "version": {
-        "Major": 6,
-        "Minor": 1,
+        "Major": 7,
+        "Minor": 0,
         "Patch": 0
     },
     "instanceNameFormat": "Automatica.Core multi-arch docker",

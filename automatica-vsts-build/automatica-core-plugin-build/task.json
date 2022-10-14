@@ -1,14 +1,14 @@
 {
-    "id": "ce6bb335-c6ef-4b34-bf32-b1de2653c06d",
-    "name": "Automatica.Core Plugin build",
+    "id": "3d124f3c-43f6-4e41-8cf5-c151777bd62c",
+    "name": "AutomaticaCorePluginCli",
     "friendlyName": "Automatica.Core Plugin build task",
     "description": "Build/deploy/prepare Automatica.Core plugins",
     "helpMarkDown": "",
     "category": "Utility",
     "author": "p3root",
     "version": {
-        "Major": 6,
-        "Minor": 1,
+        "Major": 7,
+        "Minor": 0,
         "Patch": 0
     },
     "instanceNameFormat": "Automatica.Core Plugin build",

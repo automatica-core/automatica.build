@@ -1,9 +1,9 @@
 {
     "manifestVersion": 1,
-    "id": "automatica-core-vsts-build",
-    "name": "Automatica.Core vsts build tools",
-    "version": "6.1.0",
-    "publisher": "p3root",
+    "id": "AutomaticaCoreBuildUtils",
+    "name": "Automatica.Core.Build.Utils",
+    "version": "7.0.1",
+    "publisher": "AutomaticaCore",
     "targets": [
         {
             "id": "Microsoft.VisualStudio.Services"
