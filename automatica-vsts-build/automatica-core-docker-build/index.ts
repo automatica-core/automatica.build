@@ -49,7 +49,7 @@ async function run() {
         await buildDockerManifest(`${version}${branch}`, amd64, arm32, imageName, registryEndpoint);
         
     }
-    catch (err) {
+    catch (err: any) {
         tl.setResult(tl.TaskResult.Failed, err.message);
         console.error(err);
     }

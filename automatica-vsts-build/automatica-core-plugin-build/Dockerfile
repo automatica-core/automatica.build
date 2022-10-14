@@ -6,7 +6,7 @@ ARG MANIFEST_DIR
 ARG VERSION
 ARG CONFIG
 
-
+RUN dotnet --list-sdks
 RUN dotnet tool install automatica-plugin-standalone --global
 RUN dotnet tool install automatica-cli --global
 

@@ -1,12 +1,12 @@
 # Build runtime image
-FROM automaticacore/automatica-plugin-build:latest-arm AS build
+FROM automaticacore/automatica-plugin-build:latest-amd64 AS build
 WORKDIR /src
 
 ARG MANIFEST_DIR
 ARG VERSION
 ARG CONFIG
 
-
+RUN dotnet --list-sdks
 RUN dotnet tool install automatica-plugin-standalone --global
 RUN dotnet tool install automatica-cli --global
 

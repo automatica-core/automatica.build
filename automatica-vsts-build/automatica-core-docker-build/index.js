@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -33,6 +34,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
+};
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
 };
 exports.__esModule = true;
 var tl = require("azure-pipelines-task-lib/task");
@@ -105,7 +113,7 @@ function buildDockerManifest(tag, amdImages, armImages, imageName, registryEndpo
         var retCode;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, docker_manifest(["create", imageName + ":" + tag].concat(amdImages, armImages, ["--amend"]))];
+                case 0: return [4 /*yield*/, docker_manifest(__spreadArrays(["create", imageName + ":" + tag], amdImages, armImages, ["--amend"]))];
                 case 1:
                     retCode = _a.sent();
                     if (retCode != 0) {
@@ -166,7 +174,7 @@ function buildAndPushImage(dockerFile, buildArgs, imageName, version, arch) {
                     branch = tl.getVariable("Build.SourceBranchName");
                     tag = imageName + ":" + arch + "-" + branch + "-latest";
                     tag2 = imageName + ":" + arch + "-" + branch + "-" + version;
-                    return [4 /*yield*/, docker_cli(["build", "-f", dockerFile, "-t", tag, "-t", tag2, "."].concat(buildArgs))];
+                    return [4 /*yield*/, docker_cli(__spreadArrays(["build", "-f", dockerFile, "-t", tag, "-t", tag2, "."], buildArgs))];
                 case 1:
                     buildResult = _a.sent();
                     if (buildResult != 0) {
@@ -192,7 +200,7 @@ function buildAndPushImage(dockerFile, buildArgs, imageName, version, arch) {
 function docker_manifest(params) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
-            return [2 /*return*/, run_cmd("docker", ["--config", "./", "manifest"].concat(params))];
+            return [2 /*return*/, run_cmd("docker", __spreadArrays(["--config", "./", "manifest"], params))];
         });
     });
 }
