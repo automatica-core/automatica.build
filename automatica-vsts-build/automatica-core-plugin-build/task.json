@@ -1,0 +1,86 @@
+{
+    "id": "3d124f3c-43f6-4e41-8cf5-c151777bd62c",
+    "name": "AutomaticaCorePluginCli",
+    "friendlyName": "Automatica.Core Plugin build task",
+    "description": "Build/deploy/prepare Automatica.Core plugins",
+    "helpMarkDown": "",
+    "category": "Utility",
+    "author": "p3root",
+    "version": {
+        "Major": 7,
+        "Minor": 0,
+        "Patch": 0
+    },
+    "instanceNameFormat": "Automatica.Core Plugin build",
+    "inputs": [
+        {
+            "name": "manifest_path",
+            "type": "filePath",
+            "label": "Automatica Manifest Path",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "version",
+            "type": "string",
+            "label": "Automatica plugin version",
+            "defaultValue": "",
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "api_key",
+            "type": "string",
+            "label": "Cloud API Key",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "cloud_url",
+            "type": "string",
+            "label": "Cloud URL",
+            "defaultValue": "",
+            "required": false,
+            "helpMarkDown": "The cloud url to deploy to"
+        },
+        {
+            "name": "configuration",
+            "type": "string",
+            "label": "Build configuration",
+            "defaultValue": "Debug",
+            "required": true,
+            "helpMarkDown": "The build configuration target"
+        },
+        {
+            "name": "publish",
+            "type": "boolean",
+            "label": "Publish to cloud",
+            "defaultValue": false,
+            "required": true,
+            "helpMarkDown": "Set to true if the package should be deployed to the cloud"
+        },
+        {
+            "name": "dockerize",
+            "type": "boolean",
+            "label": "Prepares the source directory for the docker build process",
+            "defaultValue": false,
+            "required": true,
+            "helpMarkDown": ""
+        },
+        {
+            "name": "outputdirectory",
+            "type": "filePath",
+            "label": "Plugin output directory",
+            "defaultValue": "$(build.artifactstagingdirectory)",
+            "required": true,
+            "helpMarkDown": "Output directory of the deployed plugin"
+        }
+    ],
+    "execution": {
+        "Node": {
+            "target": "index.js"
+        }
+    }
+}
