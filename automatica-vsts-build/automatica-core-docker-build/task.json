@@ -8,7 +8,7 @@
     "author": "p3root",
     "version": {
         "Major": 7,
-        "Minor": 0,
+        "Minor": 1,
         "Patch": 0
     },
     "instanceNameFormat": "Automatica.Core multi-arch docker",
