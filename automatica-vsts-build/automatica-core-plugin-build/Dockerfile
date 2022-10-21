@@ -28,7 +28,7 @@ RUN ls /build
 RUN automatica-cli InstallPlugin -p /build/pluginFile.acpkg -I /plugin
 
 
-FROM automaticacore/automatica-plugin-standalone:amd64-latest-develop AS runtime
+FROM automaticacore/automatica-plugin-standalone:amd64-develop-latest AS runtime
 COPY --from=build /plugin /plugin
 
 ENTRYPOINT ["/app/plugin/automatica-plugin-standalone", "/plugin"]
