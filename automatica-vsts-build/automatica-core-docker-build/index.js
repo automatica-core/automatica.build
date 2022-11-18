@@ -48,7 +48,7 @@ var fs = require('fs');
 var path = require('path');
 function run() {
     return __awaiter(this, void 0, void 0, function () {
-        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, amd64, arm32, branch, err_1;
+        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, branch, production, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, amd64, arm32, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -60,6 +60,8 @@ function run() {
                     imageName = tl.getInput("imageName", true);
                     buildArgs = tl.getInput("buildArgs", false);
                     version = tl.getInput("version", true);
+                    branch = tl.getVariable("Build.SourceBranchName");
+                    production = branch === "main" || branch === "master";
                     buildArgsArray = [];
                     if (buildArgs) {
                         splitedBuildArgs = buildArgs.split("\n");
@@ -68,6 +70,12 @@ function run() {
                             buildArgsArray.push("--build-arg");
                             buildArgsArray.push(x);
                         }
+                    }
+                    if (production) {
+                        buildArgsArray.push("--build-arg", "RUNTIME_IMAGE_TAG=latest");
+                    }
+                    else {
+                        buildArgsArray.push("--build-arg", "RUNTIME_IMAGE_TAG=latest-develop");
                     }
                     return [4 /*yield*/, docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
                 case 1:
@@ -84,8 +92,7 @@ function run() {
                 case 4:
                     console.log("Copy", path.resolve(__dirname, "docker.config"), "to config.json");
                     tl.cp(path.resolve(__dirname, "docker.config"), "config.json", "-f");
-                    branch = tl.getVariable("Build.SourceBranchName");
-                    if (branch === "master") {
+                    if (production) {
                         branch = "";
                     }
                     else {

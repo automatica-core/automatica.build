@@ -1,4 +1,5 @@
 # Build runtime image
+ARG RUNTIME_IMAGE_TAG
 FROM automaticacore/automatica-plugin-build:latest-amd64 AS build
 WORKDIR /src
 
@@ -28,7 +29,7 @@ RUN ls /build
 RUN automatica-cli InstallPlugin -p /build/pluginFile.acpkg -I /plugin
 
 
-FROM automaticacore/automatica-plugin-standalone:amd64-latest AS runtime
+FROM automaticacore/automatica-plugin-standalone:$RUNTIME_IMAGE_TAG AS runtime
 COPY --from=build /plugin /plugin
 
 ENTRYPOINT ["/app/plugin/automatica-plugin-standalone", "/plugin"]

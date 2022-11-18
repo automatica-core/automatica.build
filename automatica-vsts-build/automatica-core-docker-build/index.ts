@@ -15,6 +15,8 @@ async function run() {
 
         const buildArgs = tl.getInput("buildArgs", false);
         const version = tl.getInput("version", true);
+        let branch = tl.getVariable("Build.SourceBranchName");
+        const production = branch === "main" || branch === "master";
 
         let buildArgsArray = [];
 
@@ -27,6 +29,12 @@ async function run() {
             }
         }
 
+        if (production) {
+            buildArgsArray.push("--build-arg", "RUNTIME_IMAGE_TAG=latest");
+        } else {
+            buildArgsArray.push("--build-arg", "RUNTIME_IMAGE_TAG=latest-develop");
+        }
+
         await docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
 
         const amd64 = await buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, "amd64");
@@ -37,9 +45,7 @@ async function run() {
         console.log("Copy", path.resolve(__dirname, "docker.config"), "to config.json");
         tl.cp(path.resolve(__dirname, "docker.config"), "config.json", "-f");
 
-        let branch = tl.getVariable("Build.SourceBranchName");
-
-        if(branch === "master") {
+        if (production) {
             branch = "";
         }
         else {
@@ -47,7 +53,7 @@ async function run() {
         }
         await buildDockerManifest(`latest${branch}`, amd64, arm32, imageName, registryEndpoint);
         await buildDockerManifest(`${version}${branch}`, amd64, arm32, imageName, registryEndpoint);
-        
+
     }
     catch (err: any) {
         tl.setResult(tl.TaskResult.Failed, err.message);
@@ -67,7 +73,7 @@ async function buildDockerManifest(tag: string, amdImages: string[], armImages: 
     await dockerManifestAnnotate(armImages, `${imageName}:${tag}`, "arm");
 
 
-    
+
     await docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
 
     retCode = await docker_manifest(["push", `${imageName}:${tag}`]);
