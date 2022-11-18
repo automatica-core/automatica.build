@@ -20,7 +20,7 @@ RUN ls
 
 RUN mkdir /build
 RUN mkdir /plugin
-RUN automatica-cli pack -W $MANIFEST_DIR -V $VERSION -C $CONFIG -o /build/ -U false
+RUN automatica-cli pack -R linux-x64 -W $MANIFEST_DIR -V $VERSION -C $CONFIG -o /build/ -U false
 
 RUN for file in /build/*.acpkg; do mv $file /build/pluginFile.acpkg; break; done
 

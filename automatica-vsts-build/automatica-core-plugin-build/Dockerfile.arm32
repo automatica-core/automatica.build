@@ -1,6 +1,6 @@
 # Build runtime image
 ARG RUNTIME_IMAGE_TAG
-FROM automaticacore/automatica-plugin-build:latest-arm AS build
+FROM automaticacore/automatica-plugin-build:latest-amd64 AS build
 WORKDIR /src
 
 ARG MANIFEST_DIR
@@ -20,7 +20,7 @@ RUN ls
 
 RUN mkdir /build
 RUN mkdir /plugin
-RUN automatica-cli pack -W $MANIFEST_DIR -V $VERSION -C $CONFIG -o /build/ -U false
+RUN automatica-cli pack -R linux-arm -W $MANIFEST_DIR -V $VERSION -C $CONFIG -o /build/ -U false
 
 RUN for file in /build/*.acpkg; do mv $file /build/pluginFile.acpkg; break; done
 

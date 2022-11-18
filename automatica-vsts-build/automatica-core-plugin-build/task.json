@@ -9,7 +9,7 @@
     "version": {
         "Major": 7,
         "Minor": 4,
-        "Patch": 3
+        "Patch": 5
     },
     "instanceNameFormat": "Automatica.Core Plugin build",
     "inputs": [
