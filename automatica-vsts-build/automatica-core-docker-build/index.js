@@ -71,21 +71,15 @@ function run() {
                             buildArgsArray.push(x);
                         }
                     }
-                    if (production) {
-                        buildArgsArray.push("--build-arg", "RUNTIME_IMAGE_TAG=latest");
-                    }
-                    else {
-                        buildArgsArray.push("--build-arg", "RUNTIME_IMAGE_TAG=latest-develop");
-                    }
                     return [4 /*yield*/, docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
                 case 1:
                     _a.sent();
-                    return [4 /*yield*/, buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, "amd64")];
+                    return [4 /*yield*/, buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, "amd64", production)];
                 case 2:
                     amd64 = _a.sent();
                     arm32 = [];
                     if (!dockerArm32) return [3 /*break*/, 4];
-                    return [4 /*yield*/, buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, "arm")];
+                    return [4 /*yield*/, buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, "arm", production)];
                 case 3:
                     arm32 = _a.sent();
                     _a.label = 4;
@@ -172,16 +166,24 @@ function dockerManifestAnnotate(imageNames, imageName, arch) {
         });
     });
 }
-function buildAndPushImage(dockerFile, buildArgs, imageName, version, arch) {
+function buildAndPushImage(dockerFile, buildArgs, imageName, version, arch, production) {
+    if (production === void 0) { production = true; }
     return __awaiter(this, void 0, void 0, function () {
-        var branch, tag, tag2, buildResult;
+        var branch, tag, tag3, tag2, buildResult;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     branch = tl.getVariable("Build.SourceBranchName");
                     tag = imageName + ":" + arch + "-" + branch + "-latest";
+                    tag3 = imageName + ":" + arch + "-latest-" + branch;
                     tag2 = imageName + ":" + arch + "-" + branch + "-" + version;
-                    return [4 /*yield*/, docker_cli(__spreadArrays(["build", "-f", dockerFile, "-t", tag, "-t", tag2, "."], buildArgs))];
+                    if (production) {
+                        buildArgs.push("--build-arg", "RUNTIME_IMAGE_TAG=" + arch + "-latest");
+                    }
+                    else {
+                        buildArgs.push("--build-arg", "RUNTIME_IMAGE_TAG=" + arch + "-latest-develop");
+                    }
+                    return [4 /*yield*/, docker_cli(__spreadArrays(["build", "-f", dockerFile, "-t", tag, "-t", tag2, "-t", tag3, "."], buildArgs))];
                 case 1:
                     buildResult = _a.sent();
                     if (buildResult != 0) {
@@ -199,7 +201,13 @@ function buildAndPushImage(dockerFile, buildArgs, imageName, version, arch) {
                     if (buildResult != 0) {
                         throw new Error("error pushing image...");
                     }
-                    return [2 /*return*/, [tag, tag2]];
+                    return [4 /*yield*/, docker_cli(["push", tag3])];
+                case 4:
+                    buildResult = _a.sent();
+                    if (buildResult != 0) {
+                        throw new Error("error pushing image...");
+                    }
+                    return [2 /*return*/, [tag, tag2, tag3]];
             }
         });
     });

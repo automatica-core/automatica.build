@@ -2,7 +2,7 @@
     "manifestVersion": 1,
     "id": "AutomaticaCoreBuildUtils",
     "name": "Automatica.Core.Build.Utils",
-    "version": "7.4.2",
+    "version": "7.4.3",
     "publisher": "AutomaticaCore",
     "targets": [
         {

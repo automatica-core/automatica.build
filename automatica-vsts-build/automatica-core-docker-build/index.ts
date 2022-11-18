@@ -29,18 +29,12 @@ async function run() {
             }
         }
 
-        if (production) {
-            buildArgsArray.push("--build-arg", "RUNTIME_IMAGE_TAG=latest");
-        } else {
-            buildArgsArray.push("--build-arg", "RUNTIME_IMAGE_TAG=latest-develop");
-        }
-
         await docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
 
-        const amd64 = await buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, "amd64");
+        const amd64 = await buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, "amd64", production);
         let arm32: string[] = [];
         if (dockerArm32) {
-            arm32 = await buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, "arm");
+            arm32 = await buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, "arm", production);
         }
         console.log("Copy", path.resolve(__dirname, "docker.config"), "to config.json");
         tl.cp(path.resolve(__dirname, "docker.config"), "config.json", "-f");
@@ -93,13 +87,21 @@ async function dockerManifestAnnotate(imageNames: string[], imageName: string, a
     }
 }
 
-async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName: string, version: string, arch: "amd64" | "arm") {
+async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName: string, version: string, arch: "amd64" | "arm", production: boolean = true) {
     const branch = tl.getVariable("Build.SourceBranchName");
 
     const tag = `${imageName}:${arch}-${branch}-latest`;
+    const tag3 = `${imageName}:${arch}-latest-${branch}`;
     const tag2 = `${imageName}:${arch}-${branch}-${version}`;
 
-    var buildResult = await docker_cli(["build", "-f", dockerFile, "-t", tag, "-t", tag2, ".", ...buildArgs]);
+
+    if (production) {
+        buildArgs.push("--build-arg", `RUNTIME_IMAGE_TAG=${arch}-latest`);
+    } else {
+        buildArgs.push("--build-arg", `RUNTIME_IMAGE_TAG=${arch}-latest-develop`);
+    }
+
+    var buildResult = await docker_cli(["build", "-f", dockerFile, "-t", tag, "-t", tag2, "-t", tag3, ".", ...buildArgs]);
 
     if (buildResult != 0) {
         throw new Error("error creating image...");
@@ -115,8 +117,13 @@ async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName
     if (buildResult != 0) {
         throw new Error("error pushing image...");
     }
+    buildResult = await docker_cli(["push", tag3]);
 
-    return [tag, tag2];
+    if (buildResult != 0) {
+        throw new Error("error pushing image...");
+    }
+
+    return [tag, tag2, tag3];
 }
 
 async function docker_manifest(params: string[]): Promise<number> {
