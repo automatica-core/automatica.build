@@ -15,9 +15,17 @@ async function run() {
 
         const buildArgs = tl.getInput("buildArgs", false);
         const version = tl.getInput("version", true);
+        const cloudPublish = tl.getBoolInput("cloud_publish", false) ?? false;
+
         let branch = tl.getVariable("Build.SourceBranchName");
         const production = branch === "main" || branch === "master";
 
+        let cloudApiKey: string = "";
+        let cloudUrl: string = "";
+        if (cloudPublish) {
+            cloudApiKey = tl.getInput("cloud_api_key", true);
+            const cloudUrl = tl.getInput("cloud_url", true);
+        }
         let buildArgsArray = [];
 
         if (buildArgs) {
@@ -47,6 +55,15 @@ async function run() {
         }
         await buildDockerManifest(`latest${branch}`, amd64, arm32, imageName, registryEndpoint);
         await buildDockerManifest(`${version}${branch}`, amd64, arm32, imageName, registryEndpoint);
+
+        if (cloudPublish) {
+            const deployResult = await automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", "latest${branch}", "-V", version, "-C", "-A", cloudApiKey,  cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")]);
+
+            if (deployResult != 0) {
+                tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");
+                return;
+            }
+        }
 
     }
     catch (err: any) {
@@ -129,6 +146,12 @@ async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName
 async function docker_manifest(params: string[]): Promise<number> {
     return run_cmd("docker", ["--config", "./", "manifest", ...params]);
 }
+
+
+async function automatica_cli(params: string[]): Promise<number> {
+    return run_cmd('automatica-cli', params);
+}
+
 
 async function docker_cli(params: string[]): Promise<number> {
     return run_cmd("docker", params);

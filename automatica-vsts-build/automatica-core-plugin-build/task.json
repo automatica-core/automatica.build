@@ -7,9 +7,9 @@
     "category": "Utility",
     "author": "p3root",
     "version": {
-        "Major": 7,
-        "Minor": 4,
-        "Patch": 5
+        "Major": 8,
+        "Minor": 0,
+        "Patch": 0
     },
     "instanceNameFormat": "Automatica.Core Plugin build",
     "inputs": [
