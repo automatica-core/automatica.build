@@ -9,7 +9,7 @@
   "version": {
     "Major": 8,
     "Minor": 3,
-    "Patch": 0
+    "Patch": 1
   },
   "instanceNameFormat": "Automatica.Core multi-arch docker",
   "inputs": [

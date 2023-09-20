@@ -120,13 +120,13 @@ async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName
         tags.push("-t", tag3);
     }
 
-
-
     if (production) {
         buildArgs.push("--build-arg", `RUNTIME_IMAGE_TAG=${arch}-latest`);
     } else {
         buildArgs.push("--build-arg", `RUNTIME_IMAGE_TAG=${arch}-latest-develop`);
     }
+
+    buildArgs.push("--build-arg", `DEFAULT_TAG=${tag}`);
 
     var buildResult = await docker_cli(["build", "-f", dockerFile, ...tags, ".", ...buildArgs]);
 

@@ -214,6 +214,7 @@ function buildAndPushImage(dockerFile, buildArgs, imageName, version, buildVersi
                     else {
                         buildArgs.push("--build-arg", "RUNTIME_IMAGE_TAG=".concat(arch, "-latest-develop"));
                     }
+                    buildArgs.push("--build-arg", "DEFAULT_TAG=".concat(tag));
                     return [4 /*yield*/, docker_cli(__spreadArray(__spreadArray(__spreadArray(["build", "-f", dockerFile], tags, true), ["."], false), buildArgs, true))];
                 case 1:
                     buildResult = _a.sent();
