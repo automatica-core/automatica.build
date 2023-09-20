@@ -51,11 +51,11 @@ var path = require('path');
 function run() {
     var _a;
     return __awaiter(this, void 0, void 0, function () {
-        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, cloudPublish, branch, production, cloudApiKey, cloudUrl, cloudUrl_1, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, amd64, arm32, deployResult, err_1;
+        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, buildVersion, cloudPublish, branch, production, cloudApiKey, cloudUrl, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, amd64, arm32, deployResult, err_1;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
-                    _b.trys.push([0, 9, , 10]);
+                    _b.trys.push([0, 11, , 12]);
                     endpointId = tl.getInput("dockerRegistryEndpoint");
                     registryEndpoint = tl.getEndpointAuthorization(endpointId, false).parameters;
                     dockerAmd64 = tl.getPathInput("dockerfile_amd64", true);
@@ -63,6 +63,7 @@ function run() {
                     imageName = tl.getInput("imageName", true);
                     buildArgs = tl.getInput("buildArgs", false);
                     version = tl.getInput("version", true);
+                    buildVersion = tl.getInput("buildVersion", false);
                     cloudPublish = (_a = tl.getBoolInput("cloud_publish", false)) !== null && _a !== void 0 ? _a : false;
                     branch = tl.getVariable("Build.SourceBranchName");
                     production = branch === "main" || branch === "master";
@@ -70,7 +71,7 @@ function run() {
                     cloudUrl = "";
                     if (cloudPublish) {
                         cloudApiKey = tl.getInput("cloud_api_key", true);
-                        cloudUrl_1 = tl.getInput("cloud_url", true);
+                        cloudUrl = tl.getInput("cloud_url", true);
                     }
                     buildArgsArray = [];
                     if (buildArgs) {
@@ -84,12 +85,12 @@ function run() {
                     return [4 /*yield*/, docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
                 case 1:
                     _b.sent();
-                    return [4 /*yield*/, buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, "amd64", production)];
+                    return [4 /*yield*/, buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, buildVersion, "amd64", production)];
                 case 2:
                     amd64 = _b.sent();
                     arm32 = [];
                     if (!dockerArm32) return [3 /*break*/, 4];
-                    return [4 /*yield*/, buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, "arm", production)];
+                    return [4 /*yield*/, buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, buildVersion, "arm", production)];
                 case 3:
                     arm32 = _b.sent();
                     _b.label = 4;
@@ -108,22 +109,28 @@ function run() {
                     return [4 /*yield*/, buildDockerManifest("".concat(version).concat(branch), amd64, arm32, imageName, registryEndpoint)];
                 case 6:
                     _b.sent();
-                    if (!cloudPublish) return [3 /*break*/, 8];
-                    return [4 /*yield*/, automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", "latest${branch}", "-V", version, "-C", "-A", cloudApiKey, cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")])];
+                    if (!(version != buildVersion)) return [3 /*break*/, 8];
+                    return [4 /*yield*/, buildDockerManifest("".concat(buildVersion).concat(branch), amd64, arm32, imageName, registryEndpoint)];
                 case 7:
+                    _b.sent();
+                    _b.label = 8;
+                case 8:
+                    if (!cloudPublish) return [3 /*break*/, 10];
+                    return [4 /*yield*/, automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", "latest".concat(branch), "-V", buildVersion !== null && buildVersion !== void 0 ? buildVersion : version, "-A", cloudApiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")])];
+                case 9:
                     deployResult = _b.sent();
                     if (deployResult != 0) {
                         tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");
                         return [2 /*return*/];
                     }
-                    _b.label = 8;
-                case 8: return [3 /*break*/, 10];
-                case 9:
+                    _b.label = 10;
+                case 10: return [3 /*break*/, 12];
+                case 11:
                     err_1 = _b.sent();
                     tl.setResult(tl.TaskResult.Failed, err_1.message);
                     console.error(err_1);
-                    return [3 /*break*/, 10];
-                case 10: return [2 /*return*/];
+                    return [3 /*break*/, 12];
+                case 12: return [2 /*return*/];
             }
         });
     });
@@ -185,10 +192,10 @@ function dockerManifestAnnotate(imageNames, imageName, arch) {
         });
     });
 }
-function buildAndPushImage(dockerFile, buildArgs, imageName, version, arch, production) {
+function buildAndPushImage(dockerFile, buildArgs, imageName, version, buildVersion, arch, production) {
     if (production === void 0) { production = true; }
     return __awaiter(this, void 0, void 0, function () {
-        var branch, tag, tag3, tag2, buildResult;
+        var branch, tag, tag3, tag2, tags, tag3_1, buildResult;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -196,13 +203,18 @@ function buildAndPushImage(dockerFile, buildArgs, imageName, version, arch, prod
                     tag = "".concat(imageName, ":").concat(arch, "-").concat(branch, "-latest");
                     tag3 = "".concat(imageName, ":").concat(arch, "-latest-").concat(branch);
                     tag2 = "".concat(imageName, ":").concat(arch, "-").concat(branch, "-").concat(version);
+                    tags = ["-t", tag, "-t", tag2, "-t", tag3];
+                    if (buildVersion != version) {
+                        tag3_1 = "".concat(imageName, ":").concat(arch, "-").concat(branch, "-").concat(buildVersion);
+                        tags.push("-t", tag3_1);
+                    }
                     if (production) {
                         buildArgs.push("--build-arg", "RUNTIME_IMAGE_TAG=".concat(arch, "-latest"));
                     }
                     else {
                         buildArgs.push("--build-arg", "RUNTIME_IMAGE_TAG=".concat(arch, "-latest-develop"));
                     }
-                    return [4 /*yield*/, docker_cli(__spreadArray(["build", "-f", dockerFile, "-t", tag, "-t", tag2, "-t", tag3, "."], buildArgs, true))];
+                    return [4 /*yield*/, docker_cli(__spreadArray(__spreadArray(__spreadArray(["build", "-f", dockerFile], tags, true), ["."], false), buildArgs, true))];
                 case 1:
                     buildResult = _a.sent();
                     if (buildResult != 0) {
