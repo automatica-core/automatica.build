@@ -15,7 +15,7 @@ async function run() {
 
         const buildArgs = tl.getInput("buildArgs", false);
         const version = tl.getInput("version", true);
-        const buildVersion = tl.getInput("buildVersion", false);
+        const buildVersion = tl.getInput("buildVersion", false) ?? version;
         const cloudPublish = tl.getBoolInput("cloud_publish", false) ?? false;
 
         let branch = tl.getVariable("Build.SourceBranchName");
@@ -126,7 +126,14 @@ async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName
         buildArgs.push("--build-arg", `RUNTIME_IMAGE_TAG=${arch}-latest-develop`);
     }
 
-    buildArgs.push("--build-arg", `DEFAULT_TAG=${tag}`);
+    if (production) {
+        buildArgs.push("--build-arg", `DEFAULT_TAG=latest`);
+    }
+    else {
+        buildArgs.push("--build-arg", `DEFAULT_TAG=latest-${branch}`);
+    }
+
+   
 
     var buildResult = await docker_cli(["build", "-f", dockerFile, ...tags, ".", ...buildArgs]);
 
