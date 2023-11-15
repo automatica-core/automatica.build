@@ -40,11 +40,23 @@ async function run() {
 
         await docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
 
-        const amd64 = await buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, buildVersion, "amd64", production);
+        let taskList = [];
+
+        const amd64Task = buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, buildVersion, "amd64", production);
+        taskList.push(amd64Task);
         let arm32: string[] = [];
         if (dockerArm32) {
-            arm32 = await buildAndPushImage(dockerArm32, buildArgsArray, imageName, version,  buildVersion, "arm", production);
+            let arm32Task = buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, buildVersion, "arm", production);
+            taskList.push(arm32Task);
         }
+
+        const result = await Promise.all(taskList);
+
+        const amd64 = result[0];
+        if (dockerArm32) {
+            arm32 = result[1];
+        }
+
         console.log("Copy", path.resolve(__dirname, "docker.config"), "to config.json");
         tl.cp(path.resolve(__dirname, "docker.config"), "config.json", "-f");
 
@@ -56,11 +68,11 @@ async function run() {
         }
         await buildDockerManifest(`latest${branch}`, amd64, arm32, imageName, registryEndpoint);
         await buildDockerManifest(`${version}${branch}`, amd64, arm32, imageName, registryEndpoint);
-        if(version != buildVersion)
+        if (version != buildVersion)
             await buildDockerManifest(`${buildVersion}${branch}`, amd64, arm32, imageName, registryEndpoint);
 
         if (cloudPublish) {
-            const deployResult = await automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", `latest${branch}`, "-V", buildVersion ?? version, "-A", cloudApiKey,  "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")]);
+            const deployResult = await automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", `latest${branch}`, "-V", buildVersion ?? version, "-A", cloudApiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")]);
 
             if (deployResult != 0) {
                 tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");
@@ -115,7 +127,7 @@ async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName
     const tag2 = `${imageName}:${arch}-${branch}-${version}`;
 
     let tags = ["-t", tag, "-t", tag2, "-t", tag3];
-    if(buildVersion != version) {
+    if (buildVersion != version) {
         const tag3 = `${imageName}:${arch}-${branch}-${buildVersion}`;
         tags.push("-t", tag3);
     }
@@ -133,7 +145,7 @@ async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName
         buildArgs.push("--build-arg", `DEFAULT_TAG=latest-${branch}`);
     }
 
-   
+
 
     var buildResult = await docker_cli(["build", "-f", dockerFile, ...tags, ".", ...buildArgs]);
 

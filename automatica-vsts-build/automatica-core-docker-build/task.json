@@ -7,9 +7,9 @@
   "category": "Utility",
   "author": "p3root",
   "version": {
-    "Major": 8,
-    "Minor": 3,
-    "Patch": 3
+    "Major": 9,
+    "Minor": 0,
+    "Patch": 0
   },
   "instanceNameFormat": "Automatica.Core multi-arch docker",
   "inputs": [

@@ -51,11 +51,11 @@ var path = require('path');
 function run() {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function () {
-        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, buildVersion, cloudPublish, branch, production, cloudApiKey, cloudUrl, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, amd64, arm32, deployResult, err_1;
+        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, buildVersion, cloudPublish, branch, production, cloudApiKey, cloudUrl, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, taskList, amd64Task, arm32, arm32Task, result, amd64, deployResult, err_1;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
-                    _c.trys.push([0, 11, , 12]);
+                    _c.trys.push([0, 9, , 10]);
                     endpointId = tl.getInput("dockerRegistryEndpoint");
                     registryEndpoint = tl.getEndpointAuthorization(endpointId, false).parameters;
                     dockerAmd64 = tl.getPathInput("dockerfile_amd64", true);
@@ -85,16 +85,21 @@ function run() {
                     return [4 /*yield*/, docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
                 case 1:
                     _c.sent();
-                    return [4 /*yield*/, buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, buildVersion, "amd64", production)];
-                case 2:
-                    amd64 = _c.sent();
+                    taskList = [];
+                    amd64Task = buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, buildVersion, "amd64", production);
+                    taskList.push(amd64Task);
                     arm32 = [];
-                    if (!dockerArm32) return [3 /*break*/, 4];
-                    return [4 /*yield*/, buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, buildVersion, "arm", production)];
-                case 3:
-                    arm32 = _c.sent();
-                    _c.label = 4;
-                case 4:
+                    if (dockerArm32) {
+                        arm32Task = buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, buildVersion, "arm", production);
+                        taskList.push(arm32Task);
+                    }
+                    return [4 /*yield*/, Promise.all(taskList)];
+                case 2:
+                    result = _c.sent();
+                    amd64 = result[0];
+                    if (dockerArm32) {
+                        arm32 = result[1];
+                    }
                     console.log("Copy", path.resolve(__dirname, "docker.config"), "to config.json");
                     tl.cp(path.resolve(__dirname, "docker.config"), "config.json", "-f");
                     if (production) {
@@ -104,33 +109,33 @@ function run() {
                         branch = "-".concat(branch);
                     }
                     return [4 /*yield*/, buildDockerManifest("latest".concat(branch), amd64, arm32, imageName, registryEndpoint)];
-                case 5:
+                case 3:
                     _c.sent();
                     return [4 /*yield*/, buildDockerManifest("".concat(version).concat(branch), amd64, arm32, imageName, registryEndpoint)];
-                case 6:
+                case 4:
                     _c.sent();
-                    if (!(version != buildVersion)) return [3 /*break*/, 8];
+                    if (!(version != buildVersion)) return [3 /*break*/, 6];
                     return [4 /*yield*/, buildDockerManifest("".concat(buildVersion).concat(branch), amd64, arm32, imageName, registryEndpoint)];
-                case 7:
+                case 5:
                     _c.sent();
-                    _c.label = 8;
-                case 8:
-                    if (!cloudPublish) return [3 /*break*/, 10];
+                    _c.label = 6;
+                case 6:
+                    if (!cloudPublish) return [3 /*break*/, 8];
                     return [4 /*yield*/, automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", "latest".concat(branch), "-V", buildVersion !== null && buildVersion !== void 0 ? buildVersion : version, "-A", cloudApiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")])];
-                case 9:
+                case 7:
                     deployResult = _c.sent();
                     if (deployResult != 0) {
                         tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");
                         return [2 /*return*/];
                     }
-                    _c.label = 10;
-                case 10: return [3 /*break*/, 12];
-                case 11:
+                    _c.label = 8;
+                case 8: return [3 /*break*/, 10];
+                case 9:
                     err_1 = _c.sent();
                     tl.setResult(tl.TaskResult.Failed, err_1.message);
                     console.error(err_1);
-                    return [3 /*break*/, 12];
-                case 12: return [2 /*return*/];
+                    return [3 /*break*/, 10];
+                case 10: return [2 /*return*/];
             }
         });
     });
