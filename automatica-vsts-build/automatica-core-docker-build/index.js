@@ -215,14 +215,12 @@ function buildAndPushImage(dockerFile, buildArgs, imageName, version, buildVersi
                     }
                     if (production) {
                         buildArgs.push("--build-arg", "RUNTIME_IMAGE_TAG=".concat(arch, "-latest"));
-                    }
-                    else {
-                        buildArgs.push("--build-arg", "RUNTIME_IMAGE_TAG=".concat(arch, "-latest-develop"));
-                    }
-                    if (production) {
+                        buildArgs.push("--build-arg", "AUTOMATICA_CLOUD_ENVIRONMENT=master");
                         buildArgs.push("--build-arg", "DEFAULT_TAG=latest");
                     }
                     else {
+                        buildArgs.push("--build-arg", "AUTOMATICA_CLOUD_ENVIRONMENT=develop");
+                        buildArgs.push("--build-arg", "RUNTIME_IMAGE_TAG=".concat(arch, "-latest-develop"));
                         buildArgs.push("--build-arg", "DEFAULT_TAG=latest-".concat(branch));
                     }
                     return [4 /*yield*/, docker_cli(__spreadArray(__spreadArray(__spreadArray(["build", "-f", dockerFile], tags, true), ["."], false), buildArgs, true))];
