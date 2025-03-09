@@ -10,7 +10,7 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@types/es6-promise": "^3.3.0",
-    "azure-pipelines-task-lib": "^2.7.1",
+    "azure-pipelines-task-lib": "^4.0.0-preview",
     "vss-web-extension-sdk": "^5.141.0"
   },
   "devDependencies": {
