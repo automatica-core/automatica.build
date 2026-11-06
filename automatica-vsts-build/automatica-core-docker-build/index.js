@@ -9,12 +9,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var __generator = (this && this.__generator) || function (thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
+    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g = Object.create((typeof Iterator === "function" ? Iterator : Object).prototype);
+    return g.next = verb(0), g["throw"] = verb(1), g["return"] = verb(2), typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -44,18 +44,18 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     }
     return to.concat(ar || Array.prototype.slice.call(from));
 };
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var tl = require("azure-pipelines-task-lib/task");
 var fs = require('fs');
 var path = require('path');
 function run() {
-    var _a, _b;
     return __awaiter(this, void 0, void 0, function () {
-        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, buildVersion, cloudPublish, branch, production, cloudApiKey, cloudUrl, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, taskList, amd64Task, arm32, arm32Task, result, amd64, deployResult, err_1;
+        var endpointId, registryEndpoint, dockerAmd64, dockerArm32, imageName, buildArgs, version, buildVersion, cloudPublish, branch, production, cloudApiKey, cloudUrl, buildArgsArray, splitedBuildArgs, _i, splitedBuildArgs_1, x, taskList, amd64Task, arm32Task, result, listTags, sources, deployResult, err_1;
+        var _a, _b;
         return __generator(this, function (_c) {
             switch (_c.label) {
                 case 0:
-                    _c.trys.push([0, 9, , 10]);
+                    _c.trys.push([0, 6, , 7]);
                     endpointId = tl.getInput("dockerRegistryEndpoint");
                     registryEndpoint = tl.getEndpointAuthorization(endpointId, false).parameters;
                     dockerAmd64 = tl.getPathInput("dockerfile_amd64", true);
@@ -88,7 +88,6 @@ function run() {
                     taskList = [];
                     amd64Task = buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, buildVersion, "amd64", production);
                     taskList.push(amd64Task);
-                    arm32 = [];
                     if (dockerArm32) {
                         arm32Task = buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, buildVersion, "arm", production);
                         taskList.push(arm32Task);
@@ -96,111 +95,66 @@ function run() {
                     return [4 /*yield*/, Promise.all(taskList)];
                 case 2:
                     result = _c.sent();
-                    amd64 = result[0];
-                    if (dockerArm32) {
-                        arm32 = result[1];
-                    }
-                    console.log("Copy", path.resolve(__dirname, "docker.config"), "to config.json");
-                    tl.cp(path.resolve(__dirname, "docker.config"), "config.json", "-f");
                     if (production) {
                         branch = "";
                     }
                     else {
                         branch = "-".concat(branch);
                     }
-                    return [4 /*yield*/, buildDockerManifest("latest".concat(branch), amd64, arm32, imageName, registryEndpoint)];
+                    listTags = ["latest".concat(branch), "".concat(version).concat(branch)];
+                    if (version != buildVersion) {
+                        listTags.push("".concat(buildVersion).concat(branch));
+                    }
+                    sources = result.map(function (images) { return images[1]; });
+                    return [4 /*yield*/, buildDockerManifest(listTags, sources, imageName)];
                 case 3:
                     _c.sent();
-                    return [4 /*yield*/, buildDockerManifest("".concat(version).concat(branch), amd64, arm32, imageName, registryEndpoint)];
-                case 4:
-                    _c.sent();
-                    if (!(version != buildVersion)) return [3 /*break*/, 6];
-                    return [4 /*yield*/, buildDockerManifest("".concat(buildVersion).concat(branch), amd64, arm32, imageName, registryEndpoint)];
-                case 5:
-                    _c.sent();
-                    _c.label = 6;
-                case 6:
-                    if (!cloudPublish) return [3 /*break*/, 8];
+                    if (!cloudPublish) return [3 /*break*/, 5];
                     return [4 /*yield*/, automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", "latest".concat(branch), "-V", buildVersion !== null && buildVersion !== void 0 ? buildVersion : version, "-A", cloudApiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")])];
-                case 7:
+                case 4:
                     deployResult = _c.sent();
                     if (deployResult != 0) {
                         tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");
                         return [2 /*return*/];
                     }
-                    _c.label = 8;
-                case 8: return [3 /*break*/, 10];
-                case 9:
+                    _c.label = 5;
+                case 5: return [3 /*break*/, 7];
+                case 6:
                     err_1 = _c.sent();
                     tl.setResult(tl.TaskResult.Failed, err_1.message);
                     console.error(err_1);
-                    return [3 /*break*/, 10];
-                case 10: return [2 /*return*/];
+                    return [3 /*break*/, 7];
+                case 7: return [2 /*return*/];
             }
         });
     });
 }
-function buildDockerManifest(tag, amdImages, armImages, imageName, registryEndpoint) {
+function buildDockerManifest(tags, sourceImages, imageName) {
     return __awaiter(this, void 0, void 0, function () {
-        var retCode;
+        var tagArgs, _i, tags_1, tag, retCode;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, docker_manifest(__spreadArray(__spreadArray(__spreadArray(["create", "".concat(imageName, ":").concat(tag)], amdImages, true), armImages, true), ["--amend"], false))];
+                case 0:
+                    tagArgs = [];
+                    for (_i = 0, tags_1 = tags; _i < tags_1.length; _i++) {
+                        tag = tags_1[_i];
+                        tagArgs.push("-t", "".concat(imageName, ":").concat(tag));
+                    }
+                    return [4 /*yield*/, docker_cli(__spreadArray(__spreadArray(["buildx", "imagetools", "create"], tagArgs, true), sourceImages, true))];
                 case 1:
                     retCode = _a.sent();
                     if (retCode != 0) {
                         throw new Error("error creating manifest...");
-                    }
-                    return [4 /*yield*/, dockerManifestAnnotate(amdImages, "".concat(imageName, ":").concat(tag), "amd64")];
-                case 2:
-                    _a.sent();
-                    return [4 /*yield*/, dockerManifestAnnotate(armImages, "".concat(imageName, ":").concat(tag), "arm")];
-                case 3:
-                    _a.sent();
-                    return [4 /*yield*/, docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]])];
-                case 4:
-                    _a.sent();
-                    return [4 /*yield*/, docker_manifest(["push", "".concat(imageName, ":").concat(tag)])];
-                case 5:
-                    retCode = _a.sent();
-                    if (retCode != 0) {
-                        throw new Error("error pushing manifest image...");
                     }
                     return [2 /*return*/];
             }
         });
     });
 }
-function dockerManifestAnnotate(imageNames, imageName, arch) {
-    return __awaiter(this, void 0, void 0, function () {
-        var _i, imageNames_1, image, retCode;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    _i = 0, imageNames_1 = imageNames;
-                    _a.label = 1;
-                case 1:
-                    if (!(_i < imageNames_1.length)) return [3 /*break*/, 4];
-                    image = imageNames_1[_i];
-                    return [4 /*yield*/, docker_manifest(["annotate", "--arch", arch, "--os", "linux", imageName, image])];
-                case 2:
-                    retCode = _a.sent();
-                    if (retCode != 0) {
-                        throw new Error("error annotate image...");
-                    }
-                    _a.label = 3;
-                case 3:
-                    _i++;
-                    return [3 /*break*/, 1];
-                case 4: return [2 /*return*/];
-            }
-        });
-    });
-}
-function buildAndPushImage(dockerFile, buildArgs, imageName, version, buildVersion, arch, production) {
-    if (production === void 0) { production = true; }
-    return __awaiter(this, void 0, void 0, function () {
-        var branch, tag, tag3, tag2, tags, tag3_1, buildResult;
+function buildAndPushImage(dockerFile_1, commonBuildArgs_1, imageName_1, version_1, buildVersion_1, arch_1) {
+    return __awaiter(this, arguments, void 0, function (dockerFile, commonBuildArgs, imageName, version, buildVersion, arch, production) {
+        var branch, tag, tag3, tag2, tags, tag3_1, buildArgs, buildResult;
+        if (production === void 0) { production = true; }
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -213,6 +167,7 @@ function buildAndPushImage(dockerFile, buildArgs, imageName, version, buildVersi
                         tag3_1 = "".concat(imageName, ":").concat(arch, "-").concat(branch, "-").concat(buildVersion);
                         tags.push("-t", tag3_1);
                     }
+                    buildArgs = __spreadArray([], commonBuildArgs, true);
                     if (production) {
                         buildArgs.push("--build-arg", "RUNTIME_IMAGE_TAG=".concat(arch, "-latest"));
                         buildArgs.push("--build-arg", "AUTOMATICA_CLOUD_ENVIRONMENT=master");
@@ -249,13 +204,6 @@ function buildAndPushImage(dockerFile, buildArgs, imageName, version, buildVersi
                     }
                     return [2 /*return*/, [tag, tag2, tag3]];
             }
-        });
-    });
-}
-function docker_manifest(params) {
-    return __awaiter(this, void 0, void 0, function () {
-        return __generator(this, function (_a) {
-            return [2 /*return*/, run_cmd("docker", __spreadArray(["--config", "./", "manifest"], params, true))];
         });
     });
 }

@@ -44,7 +44,6 @@ async function run() {
 
         const amd64Task = buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, buildVersion, "amd64", production);
         taskList.push(amd64Task);
-        let arm32: string[] = [];
         if (dockerArm32) {
             let arm32Task = buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, buildVersion, "arm", production);
             taskList.push(arm32Task);
@@ -52,24 +51,21 @@ async function run() {
 
         const result = await Promise.all(taskList);
 
-        const amd64 = result[0];
-        if (dockerArm32) {
-            arm32 = result[1];
-        }
-
-        console.log("Copy", path.resolve(__dirname, "docker.config"), "to config.json");
-        tl.cp(path.resolve(__dirname, "docker.config"), "config.json", "-f");
-
         if (production) {
             branch = "";
         }
         else {
             branch = `-${branch}`;
         }
-        await buildDockerManifest(`latest${branch}`, amd64, arm32, imageName, registryEndpoint);
-        await buildDockerManifest(`${version}${branch}`, amd64, arm32, imageName, registryEndpoint);
-        if (version != buildVersion)
-            await buildDockerManifest(`${buildVersion}${branch}`, amd64, arm32, imageName, registryEndpoint);
+
+        // one manifest list for all tags: the registry reads each source image once instead of once per tag and image,
+        // and buildx uses the login from above (docker manifest with its own --config pulled anonymously)
+        const listTags = [`latest${branch}`, `${version}${branch}`];
+        if (version != buildVersion) {
+            listTags.push(`${buildVersion}${branch}`);
+        }
+        const sources = result.map(images => images[1]);
+        await buildDockerManifest(listTags, sources, imageName);
 
         if (cloudPublish) {
             const deployResult = await automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", `latest${branch}`, "-V", buildVersion ?? version, "-A", cloudApiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")]);
@@ -87,39 +83,21 @@ async function run() {
     }
 }
 
-async function buildDockerManifest(tag: string, amdImages: string[], armImages: string[], imageName: string, registryEndpoint: any) {
+async function buildDockerManifest(tags: string[], sourceImages: string[], imageName: string) {
+    const tagArgs: string[] = [];
+    for (const tag of tags) {
+        tagArgs.push("-t", `${imageName}:${tag}`);
+    }
 
-    var retCode = await docker_manifest(["create", `${imageName}:${tag}`, ...amdImages, ...armImages, "--amend"])
+    // the per-arch images carry their platform (linux/amd64, linux/arm/v7) in the image config
+    const retCode = await docker_cli(["buildx", "imagetools", "create", ...tagArgs, ...sourceImages]);
 
     if (retCode != 0) {
         throw new Error("error creating manifest...");
     }
-
-    await dockerManifestAnnotate(amdImages, `${imageName}:${tag}`, "amd64");
-    await dockerManifestAnnotate(armImages, `${imageName}:${tag}`, "arm");
-
-
-
-    await docker_cli(["--config", "./", "login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
-
-    retCode = await docker_manifest(["push", `${imageName}:${tag}`]);
-
-    if (retCode != 0) {
-        throw new Error("error pushing manifest image...");
-    }
 }
 
-async function dockerManifestAnnotate(imageNames: string[], imageName: string, arch: string) {
-    for (const image of imageNames) {
-        const retCode = await docker_manifest(["annotate", "--arch", arch, "--os", "linux", imageName, image]);
-
-        if (retCode != 0) {
-            throw new Error("error annotate image...");
-        }
-    }
-}
-
-async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName: string, version: string, buildVersion: string, arch: "amd64" | "arm", production: boolean = true) {
+async function buildAndPushImage(dockerFile: string, commonBuildArgs: any[], imageName: string, version: string, buildVersion: string, arch: "amd64" | "arm", production: boolean = true) {
     const branch = tl.getVariable("Build.SourceBranchName");
 
     const tag = `${imageName}:${arch}-${branch}-latest`;
@@ -132,6 +110,8 @@ async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName
         tags.push("-t", tag3);
     }
 
+    // own copy: amd64 and arm run in parallel and must not see each other's RUNTIME_IMAGE_TAG
+    const buildArgs = [...commonBuildArgs];
     if (production) {
         buildArgs.push("--build-arg", `RUNTIME_IMAGE_TAG=${arch}-latest`);
         buildArgs.push("--build-arg", "AUTOMATICA_CLOUD_ENVIRONMENT=master");
@@ -166,11 +146,6 @@ async function buildAndPushImage(dockerFile: string, buildArgs: any[], imageName
 
     return [tag, tag2, tag3];
 }
-
-async function docker_manifest(params: string[]): Promise<number> {
-    return run_cmd("docker", ["--config", "./", "manifest", ...params]);
-}
-
 
 async function automatica_cli(params: string[]): Promise<number> {
     return run_cmd('automatica-cli', params);
