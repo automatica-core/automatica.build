@@ -7,19 +7,19 @@ async function run() {
     try {
         const publish = tl.getBoolInput("publish", true);
         const dockerize = tl.getBoolInput("dockerize", true);
-        const manifestPath = tl.getInput("manifest_path", true);
-        const version = tl.getInput("version", true);
+        const manifestPath = tl.getInputRequired("manifest_path");
+        const version = tl.getInputRequired("version");
         let apiKey: string = "";
         let cloudUrl: string = "";
         const manifestDir = require('path').dirname(manifestPath);
 
         if (publish) {
-            apiKey = tl.getInput("api_key", true);
-            cloudUrl = tl.getInput("cloud_url", true);
+            apiKey = tl.getInputRequired("api_key");
+            cloudUrl = tl.getInputRequired("cloud_url");
         }
 
-        const config = tl.getInput("configuration", true);
-        const outDir = tl.getInput("outputdirectory", true);
+        const config = tl.getInputRequired("configuration");
+        const outDir = tl.getInputRequired("outputdirectory");
 
         tl.mkdirP(outDir);
 
@@ -41,7 +41,7 @@ async function run() {
                 return;
             }
 
-            const deployResult = await automatica_cli(["DeployPlugin", "-F", outDir + "/", "-A", apiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")]);
+            const deployResult = await automatica_cli(["DeployPlugin", "-F", outDir + "/", "-A", apiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName") ?? ""]);
 
             if (deployResult != 0) {
                 tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");

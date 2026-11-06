@@ -6,26 +6,30 @@ var path = require('path');
 async function run() {
     try {
 
-        const endpointId = tl.getInput("dockerRegistryEndpoint");
-        const registryEndpoint = tl.getEndpointAuthorization(endpointId, false).parameters;
+        const endpointId = tl.getInputRequired("dockerRegistryEndpoint");
+        const endpointAuth = tl.getEndpointAuthorization(endpointId, false);
+        if (!endpointAuth) {
+            throw new Error(`no authorization for docker registry endpoint ${endpointId}`);
+        }
+        const registryEndpoint = endpointAuth.parameters;
 
-        const dockerAmd64 = tl.getPathInput("dockerfile_amd64", true);
+        const dockerAmd64 = tl.getPathInputRequired("dockerfile_amd64");
         const dockerArm32 = tl.getPathInput("dockerfile_arm32", false);
-        const imageName = tl.getInput("imageName", true);
+        const imageName = tl.getInputRequired("imageName");
 
         const buildArgs = tl.getInput("buildArgs", false);
-        const version = tl.getInput("version", true);
-        const buildVersion = tl.getInput("buildVersion", false) ?? version;
+        const version = tl.getInputRequired("version");
+        const buildVersion = tl.getInput("buildVersion", false) || version;
         const cloudPublish = tl.getBoolInput("cloud_publish", false) ?? false;
 
-        let branch = tl.getVariable("Build.SourceBranchName");
+        let branch = tl.getVariable("Build.SourceBranchName") ?? "";
         const production = branch === "main" || branch === "master";
 
         let cloudApiKey: string = "";
         let cloudUrl: string = "";
         if (cloudPublish) {
-            cloudApiKey = tl.getInput("cloud_api_key", true);
-            cloudUrl = tl.getInput("cloud_url", true);
+            cloudApiKey = tl.getInputRequired("cloud_api_key");
+            cloudUrl = tl.getInputRequired("cloud_url");
         }
         let buildArgsArray = [];
 
@@ -68,7 +72,7 @@ async function run() {
         await buildDockerManifest(listTags, sources, imageName);
 
         if (cloudPublish) {
-            const deployResult = await automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", `latest${branch}`, "-V", buildVersion ?? version, "-A", cloudApiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName")]);
+            const deployResult = await automatica_cli(["DeployDockerUpdate", "-I", imageName, "-Im", `latest${branch}`, "-V", buildVersion, "-A", cloudApiKey, "-C", cloudUrl, "-Cl", tl.getVariable("Build.SourceBranchName") ?? ""]);
 
             if (deployResult != 0) {
                 tl.setResult(tl.TaskResult.Failed, "DeployPlugin command failed");
@@ -98,7 +102,7 @@ async function buildDockerManifest(tags: string[], sourceImages: string[], image
 }
 
 async function buildAndPushImage(dockerFile: string, commonBuildArgs: any[], imageName: string, version: string, buildVersion: string, arch: "amd64" | "arm", production: boolean = true) {
-    const branch = tl.getVariable("Build.SourceBranchName");
+    const branch = tl.getVariable("Build.SourceBranchName") ?? "";
 
     const tag = `${imageName}:${arch}-${branch}-latest`;
     const tag3 = `${imageName}:${arch}-latest-${branch}`;

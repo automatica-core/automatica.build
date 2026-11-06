@@ -8,7 +8,7 @@
   "author": "p3root",
   "version": {
     "Major": 9,
-    "Minor": 2,
+    "Minor": 3,
     "Patch": 0
   },
   "instanceNameFormat": "Automatica.Core multi-arch docker",
@@ -93,8 +93,12 @@
       "helpMarkDown": ""
     }
   ],
+  "minimumAgentVersion": "3.232.1",
   "execution": {
-    "Node": {
+    "Node20_1": {
+      "target": "index.js"
+    },
+    "Node24": {
       "target": "index.js"
     }
   }

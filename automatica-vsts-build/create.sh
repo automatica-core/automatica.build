@@ -3,15 +3,17 @@
 
 rm *.vsix
 cd automatica-core-plugin-build
-npm i
+npm ci
 rm -f index.js
-tsc index.ts 
+npx tsc -p .
+npm prune --omit=dev
 cd ..
 
 cd automatica-core-docker-build
-npm i
+npm ci
 rm -f index.js
-tsc index.ts 
+npx tsc -p .
+npm prune --omit=dev
 cd ..
 
 tfx extension create --manifest-globs vss-extension.json
