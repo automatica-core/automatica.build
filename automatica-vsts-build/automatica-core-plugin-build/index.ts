@@ -3,6 +3,12 @@ import process = require('process')
 var fs = require('fs');
 var path = require('path');
 
+// automatica-cli signs the package when it finds the key in its environment (PackageSigning.KeyEnv / KeyFileEnv).
+// Secret pipeline variables are not in the environment of a task, so the task reads them and passes them on.
+const signingKeyVariable = "AUTOMATICA_PACKAGE_SIGNING_KEY";
+const signingKeyFileVariable = "AUTOMATICA_PACKAGE_SIGNING_KEY_FILE";
+const requireSignatureVariable = "AUTOMATICA_REQUIRE_PACKAGE_SIGNATURE";
+
 async function run() {
     try {
         const publish = tl.getBoolInput("publish", true);
@@ -16,6 +22,7 @@ async function run() {
         if (publish) {
             apiKey = tl.getInputRequired("api_key");
             cloudUrl = tl.getInputRequired("cloud_url");
+            tl.setSecret(apiKey);
         }
 
         const config = tl.getInputRequired("configuration");
@@ -34,7 +41,7 @@ async function run() {
 
         if (publish) {
 
-            const packResult = await automatica_cli(["Pack", "-W", manifestDir, "-V", version, "-C", config, "-O", outDir]);
+            const packResult = await automatica_cli(["Pack", "-W", manifestDir, "-V", version, "-C", config, "-O", outDir], getSigningEnv());
 
             if (packResult != 0) {
                 tl.setResult(tl.TaskResult.Failed, "Pack command failed");
@@ -55,19 +62,46 @@ async function run() {
     }
 }
 
-async function automatica_cli(params: string[]): Promise<number> {
-    return run_cmd('automatica-cli', params);
+/**
+ * The signing key (secret variable AUTOMATICA_PACKAGE_SIGNING_KEY, PEM or base64 PKCS#8) for the Pack command only.
+ * Without a key the package is not signed: cores from 10.0 reject unsigned plugin packages.
+ */
+export function getSigningEnv(): NodeJS.ProcessEnv {
+    const env: NodeJS.ProcessEnv = {};
+    const key = tl.getVariable(signingKeyVariable);
+    const keyFile = tl.getVariable(signingKeyFileVariable);
+    const requireSignature = tl.getVariable(requireSignatureVariable);
+
+    if (key) {
+        tl.setSecret(key);
+        env[signingKeyVariable] = key;
+    }
+    if (keyFile) {
+        env[signingKeyFileVariable] = keyFile;
+    }
+    if (requireSignature) {
+        env[requireSignatureVariable] = requireSignature;
+    }
+    if (!key && !keyFile) {
+        console.log(`##vso[task.logissue type=warning]No package signing key (secret variable ${signingKeyVariable}), the plugin package is NOT signed and cores from 10.0 will reject it`);
+    }
+    return env;
+}
+
+async function automatica_cli(params: string[], extraEnv: NodeJS.ProcessEnv = {}): Promise<number> {
+    return run_cmd('automatica-cli', params, extraEnv);
 }
 
 async function docker_cli(params: string[]): Promise<number> {
     return run_cmd("docker", params);
 }
 
-async function run_cmd(cmd: string, params: string[]) {
+async function run_cmd(cmd: string, params: string[], extraEnv: NodeJS.ProcessEnv = {}) {
     return new Promise<number>((resolve) => {
         var spawn = require('child_process').spawn;
-        var prc = spawn(cmd, params);
-        console.log("spawning ", cmd, "with params", params);
+        // secrets only through the environment of the child process, never on the command line output
+        var prc = spawn(cmd, params, { env: { ...process.env, ...extraEnv } });
+        console.log("spawning ", cmd, "with params", redact(params));
 
         //noinspection JSUnresolvedFunction
         prc.stdout.setEncoding('utf8');
@@ -88,6 +122,12 @@ async function run_cmd(cmd: string, params: string[]) {
         });
 
     });
+}
+
+/** hides the value that follows an api key or password option (local runs do not mask setSecret values) */
+function redact(params: string[]): string[] {
+    const secretOptions = ["-A", "-p", "--password"];
+    return params.map((p, i) => i > 0 && secretOptions.includes(params[i - 1]) ? "***" : p);
 }
 
 run();
