@@ -8,7 +8,7 @@
   "author": "p3root",
   "version": {
     "Major": 9,
-    "Minor": 3,
+    "Minor": 4,
     "Patch": 0
   },
   "instanceNameFormat": "Automatica.Core multi-arch docker",
@@ -53,6 +53,14 @@
       "helpMarkDown": ""
     },
     {
+      "name": "buildSecrets",
+      "type": "multiLine",
+      "label": "BuildKit secrets",
+      "defaultValue": "",
+      "required": false,
+      "helpMarkDown": "One `id=value` per line, e.g. `devexpress_license=$(DEVEXPRESS_LICENSE)`. Passed as `docker build --secret id=<id>` for `RUN --mount=type=secret,id=<id>`, never stored in the image. Use secret variables for the values. The cloud API key input is added as secret `cloud_api_key` automatically."
+    },
+    {
       "name": "version",
       "type": "string",
       "label": "Image version",
@@ -90,7 +98,7 @@
       "label": "Cloud API Key",
       "defaultValue": "",
       "required": false,
-      "helpMarkDown": ""
+      "helpMarkDown": "Passed to the docker build as BuildKit secret `cloud_api_key` (`RUN --mount=type=secret,id=cloud_api_key`) and used for the cloud publish. Use a secret variable, never a build arg."
     }
   ],
   "minimumAgentVersion": "3.232.1",

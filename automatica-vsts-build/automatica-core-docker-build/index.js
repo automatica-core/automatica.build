@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const tl = require("azure-pipelines-task-lib/task");
+const process = require("process");
 var fs = require('fs');
 var path = require('path');
 async function run() {
@@ -20,26 +21,47 @@ async function run() {
         const cloudPublish = tl.getBoolInput("cloud_publish", false) ?? false;
         let branch = tl.getVariable("Build.SourceBranchName") ?? "";
         const production = branch === "main" || branch === "master";
-        let cloudApiKey = "";
+        // the cloud key is passed to the build as BuildKit secret (RUN --mount=type=secret,id=cloud_api_key):
+        // build args end up in the image history, secrets do not
+        const cloudApiKey = tl.getInput("cloud_api_key", cloudPublish) ?? "";
         let cloudUrl = "";
         if (cloudPublish) {
-            cloudApiKey = tl.getInputRequired("cloud_api_key");
             cloudUrl = tl.getInputRequired("cloud_url");
+        }
+        if (cloudApiKey) {
+            tl.setSecret(cloudApiKey);
         }
         let buildArgsArray = [];
         if (buildArgs) {
-            const splitedBuildArgs = buildArgs.split("\n");
+            const splitedBuildArgs = buildArgs.split("\n").map(x => x.trim()).filter(x => x.length > 0);
             for (const x of splitedBuildArgs) {
+                const name = x.split("=")[0];
+                if (secretBuildArgs.includes(name)) {
+                    // as build arg the value would be stored in the image metadata
+                    console.log(`##vso[task.logissue type=warning]Build arg ${name} is ignored: pass it with the cloud_api_key or buildSecrets input (BuildKit secret)`);
+                    continue;
+                }
                 buildArgsArray.push("--build-arg");
                 buildArgsArray.push(x);
             }
         }
-        await docker_cli(["login", "-u", registryEndpoint["username"], "-p", registryEndpoint["password"]]);
+        const registryPassword = registryEndpoint["password"] ?? "";
+        if (registryPassword) {
+            tl.setSecret(registryPassword);
+        }
+        const loginResult = await run_cmd("docker", ["login", "-u", registryEndpoint["username"], "--password-stdin"], {}, registryPassword);
+        if (loginResult != 0) {
+            throw new Error("docker login failed");
+        }
+        const buildSecrets = parseBuildSecrets(tl.getInput("buildSecrets", false) ?? "");
+        if (cloudApiKey && !buildSecrets.some(x => x.id === "cloud_api_key")) {
+            buildSecrets.push({ id: "cloud_api_key", env: "CLOUD_API_KEY", value: cloudApiKey });
+        }
         let taskList = [];
-        const amd64Task = buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, buildVersion, "amd64", production);
+        const amd64Task = buildAndPushImage(dockerAmd64, buildArgsArray, imageName, version, buildVersion, "amd64", production, buildSecrets);
         taskList.push(amd64Task);
         if (dockerArm32) {
-            let arm32Task = buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, buildVersion, "arm", production);
+            let arm32Task = buildAndPushImage(dockerArm32, buildArgsArray, imageName, version, buildVersion, "arm", production, buildSecrets);
             taskList.push(arm32Task);
         }
         const result = await Promise.all(taskList);
@@ -70,6 +92,31 @@ async function run() {
         console.error(err);
     }
 }
+/** never passed as --build-arg: build args are kept in the image history */
+const secretBuildArgs = ["CLOUD_API_KEY", "FONTAWESOME_TOKEN"];
+/**
+ * buildSecrets input: one "id=value" per line, e.g. "devexpress_license=$(DEVEXPRESS_LICENSE)".
+ * Each value reaches docker only through the environment (--secret id=<id>,env=<var>).
+ */
+function parseBuildSecrets(input) {
+    const secrets = [];
+    for (const line of input.split("\n").map(x => x.trim()).filter(x => x.length > 0)) {
+        const index = line.indexOf("=");
+        const id = index > 0 ? line.substring(0, index).trim() : "";
+        const value = index > 0 ? line.substring(index + 1).trim() : "";
+        if (!/^[A-Za-z0-9_.-]+$/.test(id)) {
+            throw new Error("buildSecrets: every line must be id=value");
+        }
+        if (!value) {
+            // an unset optional secret (e.g. the DevExtreme license) is skipped, RUN --mount fails if it is required
+            console.log(`##vso[task.logissue type=warning]Build secret ${id} has no value and is not passed`);
+            continue;
+        }
+        tl.setSecret(value);
+        secrets.push({ id, env: `AUTOMATICA_BUILD_SECRET_${secrets.length}`, value });
+    }
+    return secrets;
+}
 async function buildDockerManifest(tags, sourceImages, imageName) {
     const tagArgs = [];
     for (const tag of tags) {
@@ -81,7 +128,7 @@ async function buildDockerManifest(tags, sourceImages, imageName) {
         throw new Error("error creating manifest...");
     }
 }
-async function buildAndPushImage(dockerFile, commonBuildArgs, imageName, version, buildVersion, arch, production = true) {
+async function buildAndPushImage(dockerFile, commonBuildArgs, imageName, version, buildVersion, arch, production = true, secrets = []) {
     const branch = tl.getVariable("Build.SourceBranchName") ?? "";
     const tag = `${imageName}:${arch}-${branch}-latest`;
     const tag3 = `${imageName}:${arch}-latest-${branch}`;
@@ -103,7 +150,14 @@ async function buildAndPushImage(dockerFile, commonBuildArgs, imageName, version
         buildArgs.push("--build-arg", `RUNTIME_IMAGE_TAG=${arch}-latest-develop`);
         buildArgs.push("--build-arg", `DEFAULT_TAG=latest-${branch}`);
     }
-    var buildResult = await docker_cli(["build", "-f", dockerFile, ...tags, ".", ...buildArgs]);
+    // --secret needs BuildKit; the value only goes into the environment of the docker process
+    const secretArgs = [];
+    const env = { DOCKER_BUILDKIT: "1" };
+    for (const secret of secrets) {
+        secretArgs.push("--secret", `id=${secret.id},env=${secret.env}`);
+        env[secret.env] = secret.value;
+    }
+    var buildResult = await run_cmd("docker", ["build", "-f", dockerFile, ...tags, ...secretArgs, ".", ...buildArgs], env);
     if (buildResult != 0) {
         throw new Error("error creating image...");
     }
@@ -127,11 +181,16 @@ async function automatica_cli(params) {
 async function docker_cli(params) {
     return run_cmd("docker", params);
 }
-async function run_cmd(cmd, params) {
+async function run_cmd(cmd, params, extraEnv = {}, stdin) {
     return new Promise((resolve) => {
         var spawn = require('child_process').spawn;
-        var prc = spawn(cmd, params);
-        console.log("spawning ", cmd, "with params", params);
+        var prc = spawn(cmd, params, { env: { ...process.env, ...extraEnv } });
+        // the agent masks values registered with setSecret, local runs (test.sh) do not: never print the key
+        console.log("spawning ", cmd, "with params", redact(params));
+        if (stdin !== undefined) {
+            prc.stdin.write(stdin);
+        }
+        prc.stdin.end();
         //noinspection JSUnresolvedFunction
         prc.stdout.setEncoding('utf8');
         prc.stdout.on('data', function (data) {
@@ -149,5 +208,10 @@ async function run_cmd(cmd, params) {
             resolve(code);
         });
     });
+}
+/** hides the value that follows an api key or password option */
+function redact(params) {
+    const secretOptions = ["-A", "-p", "--password"];
+    return params.map((p, i) => i > 0 && secretOptions.includes(params[i - 1]) ? "***" : p);
 }
 run();
